@@ -1,0 +1,34 @@
+config default = "bench"
+
+let profile = "release"
+
+# Pick cflags based on the build profile
+let cflags = profile | match {
+    "debug" => ["-O0"]
+    "release" => ["-O3"]
+    "asan-address" => ["-O1", "--sanitize=address"]
+    "%" => ""
+}
+
+build "benchit" {
+    from ["bench/bench.c3", "string-map.c3"]
+    run "c3c compile {cflags*} <in*> -o <out>"
+}
+
+build "testrun" {
+    from glob "*.c3"
+    # Compiles and runs, ok for now because running tests is fast
+    run "c3c compile-test --no-run <in*> -o <out>"
+}
+
+task bench {
+    let bench_exe = "benchit"
+    build bench_exe
+    run "<bench_exe>"
+}
+
+task test {
+    let test_exe = "testrun"
+    build test_exe
+    run "<test_exe>"
+}
