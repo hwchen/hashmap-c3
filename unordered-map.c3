@@ -15,6 +15,12 @@ bitstruct Metadata: char {
 	char fingerprint: 1..7;
 }
 
+// uses high 7 bits of has for fingerprint, as low bits are
+// already used to find the index.
+fn void Metadata.set_fingerprint(&m, ulong hash) {
+	m.fingerprint = (char)(hash >> (64 - 7));
+}
+
 // Does not handle empty strings as keys.
 struct UnorderedMap {
 	Allocator alloc;
@@ -53,7 +59,7 @@ fn bool UnorderedMap.add_entry(&self, Key key, Value value) @local {
 	while (true) {
 		if (!self.metadatas[idx].used) {
 			self.metadatas[idx].used = true;
-			// TODO use fingerprint
+			self.metadatas[idx].set_fingerprint(hash);
 			self.count += 1;
 			self.entries[idx].key = key;
 			self.entries[idx].value = value;
@@ -78,7 +84,13 @@ fn Value*! UnorderedMap.get_ref(&self, Key key) {
 		if (!self.metadatas[idx].used) {
 			return SearchResult.MISSING?;
 		}
-		// TODO use fingerprint
+
+		char fingerprint = (char)(hash >> (64 - 7));
+		if (self.metadatas[idx].fingerprint != fingerprint) {
+			// slot is used but fingerprints differ, continue.
+			idx = (idx + 1) & mask;
+		}
+
 		Key k = self.entries[idx].key;
 		if (k == key) {
 			return &self.entries[idx].value;
@@ -136,6 +148,7 @@ fn void! UnorderedMap.remove(&self, Key key) @maydiscard {
 		if (!self.metadatas[idx].used) {
 			return SearchResult.MISSING?;
 		}
+		// TODO use fingerprint
 		Key k = self.entries[idx].key;
 		if (k == key) {
 			self.metadatas[idx].used = false;
