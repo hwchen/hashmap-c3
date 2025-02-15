@@ -1,8 +1,8 @@
 module test;
-import string_map;
+import ordered_map;
 
-fn void test_string_map() @test {
-	StringMap(<usz>) map;
+fn void test_ordered_map() @test {
+	OrderedMap(<String, usz>) map;
 	map.init(allocator::temp(), capacity: 2);
 	map.set("A", 0);
 	map.set("AC", 1);
@@ -31,14 +31,14 @@ fn void test_string_map() @test {
 	assert(!map.has_key("A"));
 }
 
-fn void test_string_map_copy() @test {
-	StringMap(<usz>) old_map;
+fn void test_ordered_map_copy() @test {
+	OrderedMap(<String, usz>) old_map;
 	old_map.init(allocator::temp(), capacity: 2);
 	old_map.set("A", 0);
 	old_map.set("AC", 1);
 	old_map.set("ACGT", 2);
 
-	StringMap(<usz>) new_map = old_map.copy(allocator::temp());
+	OrderedMap(<String, usz>) new_map = old_map.copy(allocator::temp());
 
 	assert(new_map.has_key("A"));
 	assert(new_map.has_key("AC"));

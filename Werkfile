@@ -11,12 +11,12 @@ let cflags = profile | match {
 }
 
 build "benchit" {
-    from ["bench/bench.c3", "string-map.c3"]
+    from ["bench/bench.c3", "ordered-map.c3"]
     run "c3c compile {cflags*} <in*> -o <out>"
 }
 
 build "testrun" {
-    from ["string-map-test.c3", "string-map.c3"]
+    from ["ordered-map-test.c3", "ordered-map.c3"]
     # Compiles and runs, ok for now because running tests is fast
     run "c3c compile-test --no-run <in*> -o <out>"
 }

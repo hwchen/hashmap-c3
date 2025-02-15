@@ -4,15 +4,16 @@ module bench;
 import std::collections;
 import std::io;
 import std::time::clock;
-import string_map;
+import ordered_map;
 
-def MyMap = StringMap(<ulong>);
+def MyMap = OrderedMap(<String, ulong>);
 
 fn void main() {
 	String words = (String)file::load_new("/usr/share/dict/words", allocator::heap())!!;
 	String[] lines = words.split("\n");
 
 	benchit("mymap", MyMap, lines);
+	io::printn();
 	benchit("stdhashmap", HashMap(<String, ulong>), lines);
 }
 
