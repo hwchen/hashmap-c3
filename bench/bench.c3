@@ -1,37 +1,66 @@
-// A basic bench; reads /usr/share/dict/words and inserts into hashmap
+// Benchmark from
+// - https://martin.ankerl.com/2019/04/01/hashmap-benchmarks-01-overview/
+// - https://github.com/ziglang/zig/pull/5999
 
 module bench;
 import std::collections;
 import std::io;
 import std::time::clock;
+import std::math::random;
 import ordered_map;
 import unordered_map;
 
 fn void main() {
-	String words = (String)file::load_new("/usr/share/dict/words", allocator::heap())!!;
-	String[] lines = words.split("\n");
-
-	benchit("orderedmap", OrderedMap(<String, ulong>), lines);
-	io::printn();
-	benchit("unorderedmap", UnorderedMap(<String, ulong>), lines);
-	io::printn();
-	benchit("stdhashmap", HashMap(<String, ulong>), lines);
+	construction_destruction(OrderedMap(<String, ulong>));
+	construction_destruction(UnorderedMap(<String, ulong>));
+	construction_destruction(HashMap(<String, ulong>));
+	construction_insert_one_int_destruction(OrderedMap(<int, int>));
+	construction_insert_one_int_destruction(UnorderedMap(<int, int>));
+	construction_insert_one_int_destruction(HashMap(<int, int>));
+	//insert_erase_100M_int(OrderedMap(<int, int>));
+	insert_erase_100M_int(UnorderedMap(<int, int>));
+	insert_erase_100M_int(HashMap(<int, int>));
 }
 
-macro benchit(label, $MapImpl, lines) {
-	$MapImpl mymap;
-	mymap.init(allocator::heap());
-	Clock clock = clock::now();
-	foreach (line : lines) {
-		mymap.set(line, 1);
+macro construction_destruction($MapImpl) {
+	usz result;
+	Clock start = clock::now();
+	for (usz n = 0; n < 100_000_000; n += 1) {
+		$MapImpl mymap;
+		result += mymap.len();
 	}
-	NanoDuration insert_timing = clock.mark();
-	io::eprintfn("%s insert time: %s", label, insert_timing);
-	foreach (line : lines) {
-		mymap.get(line)!!;
+	NanoDuration end = start.to_now();
+	assert(result == 0);
+	io::eprintfn("Construct/destruct %s: %s", $MapImpl.nameof, end);
+}
+
+macro construction_insert_one_int_destruction($MapImpl) {
+	usz result;
+	Clock start = clock::now();
+	for (int n = 0; n < 50_000_000; n += 1) {
+		@pool() {
+			$MapImpl mymap;
+			mymap.init(allocator::temp());
+			mymap.set(n, 0);
+			result += mymap.len();
+		};
 	}
-	NanoDuration get_timing = clock.mark();
-	io::eprintfn("%s get time: %s", label, get_timing);
-	NanoDuration total = insert_timing + get_timing;
-	io::eprintfn("%s total time: %s", label, total);
+	NanoDuration end = start.to_now();
+	assert(result == 0);
+	io::eprintfn("Construct, insert one int, destruct %s: %s", $MapImpl.nameof, end);
+}
+
+macro insert_erase_100M_int($MapImpl) {
+	io::eprintfn("Insert and erase 100M int %s", $MapImpl.nameof);
+	@pool() {
+		$MapImpl mymap;
+		mymap.init(allocator::temp());
+		Clock clock = clock::now();
+		for (int n = 0; n < 100_000_000; n += 1) {
+			int x = rand(int.max);
+			mymap.set(x, n);
+		}
+		NanoDuration insert_0_time = clock.mark();
+		io::eprintfn("  insert 100M int: %s", insert_0_time);
+	};
 }
