@@ -1,8 +1,12 @@
 module test;
 import ordered_map;
 
-fn void test_ordered_map() @test {
-	OrderedMap(<String, usz>) map;
+fn void test_ordered_map_basic() @test {
+	test_map_basic(OrderedMap(<String, usz>));
+}
+
+macro test_map_basic($MapImpl) {
+	$MapImpl map;
 	map.init(allocator::temp(), capacity: 2);
 	map.set("A", 0);
 	map.set("AC", 1);
@@ -32,13 +36,17 @@ fn void test_ordered_map() @test {
 }
 
 fn void test_ordered_map_copy() @test {
-	OrderedMap(<String, usz>) old_map;
+	test_map_copy(OrderedMap(<String, usz>));
+}
+
+macro test_map_copy($MapImpl) {
+	$MapImpl old_map;
 	old_map.init(allocator::temp(), capacity: 2);
 	old_map.set("A", 0);
 	old_map.set("AC", 1);
 	old_map.set("ACGT", 2);
 
-	OrderedMap(<String, usz>) new_map = old_map.copy(allocator::temp());
+	$MapImpl new_map = old_map.copy(allocator::temp());
 
 	assert(new_map.has_key("A"));
 	assert(new_map.has_key("AC"));
