@@ -16,7 +16,7 @@ build "benchit" {
 }
 
 build "testrun" {
-    from glob "*.c3"
+    from ["string-map-test.c3", "string-map.c3"]
     # Compiles and runs, ok for now because running tests is fast
     run "c3c compile-test --no-run <in*> -o <out>"
 }

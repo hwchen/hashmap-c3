@@ -1,7 +1,7 @@
 module test;
 import string_map;
 
-fn void! test_string_map() @test {
+fn void test_string_map() @test {
 	StringMap(<usz>) map;
 	map.init(allocator::temp(), capacity: 3);
 	map.set("A", 0);
@@ -31,7 +31,7 @@ fn void! test_string_map() @test {
 	assert(!map.has_key("A"));
 }
 
-fn void! test_string_map_copy() @test {
+fn void test_string_map_copy() @test {
 	StringMap(<usz>) old_map;
 	old_map.init(allocator::temp(), capacity: 3);
 	old_map.set("A", 0);
