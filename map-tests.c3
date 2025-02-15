@@ -1,8 +1,22 @@
 module test;
 import ordered_map;
+import unordered_map;
 
 fn void test_ordered_map_basic() @test {
 	test_map_basic(OrderedMap(<String, usz>));
+}
+
+fn void test_unordered_map_basic() @test {
+	test_map_basic(UnorderedMap(<String, usz>));
+}
+
+macro debug_cells(map) {
+	foreach (idx, cell : map.cells) {
+		io::printfn("idx %d", idx);
+		io::printfn("key %s", cell.entry.key);
+		io::printfn("value %d", cell.entry.value);
+		io::printfn("used %s", cell.used);
+	}
 }
 
 macro test_map_basic($MapImpl) {
@@ -37,6 +51,10 @@ macro test_map_basic($MapImpl) {
 
 fn void test_ordered_map_copy() @test {
 	test_map_copy(OrderedMap(<String, usz>));
+}
+
+fn void test_unordered_map_copy() @test {
+	test_map_copy(UnorderedMap(<String, usz>));
 }
 
 macro test_map_copy($MapImpl) {

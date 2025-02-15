@@ -5,14 +5,15 @@ import std::collections;
 import std::io;
 import std::time::clock;
 import ordered_map;
-
-def MyMap = OrderedMap(<String, ulong>);
+import unordered_map;
 
 fn void main() {
 	String words = (String)file::load_new("/usr/share/dict/words", allocator::heap())!!;
 	String[] lines = words.split("\n");
 
-	benchit("mymap", MyMap, lines);
+	benchit("orderedmap", OrderedMap(<String, ulong>), lines);
+	io::printn();
+	benchit("unorderedmap", UnorderedMap(<String, ulong>), lines);
 	io::printn();
 	benchit("stdhashmap", HashMap(<String, ulong>), lines);
 }
