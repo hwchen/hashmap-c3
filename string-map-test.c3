@@ -3,7 +3,7 @@ import string_map;
 
 fn void test_string_map() @test {
 	StringMap(<usz>) map;
-	map.init(allocator::temp(), capacity: 3);
+	map.init(allocator::temp(), capacity: 2);
 	map.set("A", 0);
 	map.set("AC", 1);
 	map.set("AC", 2);
@@ -33,7 +33,7 @@ fn void test_string_map() @test {
 
 fn void test_string_map_copy() @test {
 	StringMap(<usz>) old_map;
-	old_map.init(allocator::temp(), capacity: 3);
+	old_map.init(allocator::temp(), capacity: 2);
 	old_map.set("A", 0);
 	old_map.set("AC", 1);
 	old_map.set("ACGT", 2);

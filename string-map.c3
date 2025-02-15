@@ -16,6 +16,9 @@ struct StringMap {
 }
 
 fn void StringMap.init(&self, Allocator allocator, int capacity = 16) {
+	// check that capacity is a power of 2
+	assert((capacity & (capacity - 1)) == 0, "capacity must be a power of 2");
+
 	self.alloc = allocator;
 	self.entries = allocator::new_array(self.alloc, usz, capacity);
 
@@ -36,10 +39,9 @@ fn bool StringMap.set(&self, String key, Value value) {
 	if (!self.alloc) {
 		self.init(allocator::heap());
 	}
-
-	// max load 50%
-	if ((self.count + 1) * 2 >= self.entries.len) {
-	    self.realloc();
+	// max load 80%
+	if ((float)self.count * 1.25 >= self.entries.len) {
+		self.realloc();
 	}
 
 	return self.add_entry(key, value);
@@ -47,7 +49,8 @@ fn bool StringMap.set(&self, String key, Value value) {
 
 fn bool StringMap.add_entry(&self, String key, Value value) @local {
 	usz hash = key.hash();
-	usz idx = hash % self.entries.len;
+	usz mask = self.entries.len - 1;
+	usz idx = hash & mask;
 	while (true) {
 		usz entry_idx = self.entries[idx];
 		if (entry_idx == 0) {
@@ -62,14 +65,15 @@ fn bool StringMap.add_entry(&self, String key, Value value) @local {
 			self.values[entry_idx] = value;
 			return false;
 		}
-		idx = (idx + 1) % self.entries.len;
+		idx = (idx + 1) & mask;
 	}
 }
 
 fn Value*! StringMap.get_ref(&self, String key) {
 	if (!self.count) return SearchResult.MISSING?;
 	usz hash = key.hash();
-	usz idx = hash % self.entries.len;
+	usz mask = self.entries.len - 1;
+	usz idx = hash & mask;
 
 	while (true) {
 		usz entry_idx = self.entries[idx];
@@ -80,7 +84,7 @@ fn Value*! StringMap.get_ref(&self, String key) {
 		if (k == key) {
 			return &self.values[entry_idx];
 		}
-		idx = (idx + 1) % self.entries.len;
+		idx = (idx + 1) & mask;
 	}
 }
 
@@ -111,6 +115,8 @@ fn void StringMap.realloc(&self) {
 	self.values = new_values;
 
 	// Start at 1, because 0 is junk value
+	usz old_count = self.count;
+	self.count = 0;
 	for (usz i = 1; i < old_keys.len(); i += 1) {
 		self.add_entry(old_keys[i], old_values[i]);
 	}
