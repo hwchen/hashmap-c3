@@ -163,12 +163,12 @@ fn StringMap StringMap.copy(&old, Allocator alloc) {
 	new.entries = allocator::new_array(new.alloc, usz, old.entries.len);
 	new.entries[..] = old.entries[..];
 
-	String[] old_keys = old.keys.to_new_array();
+	String[] old_keys = old.keys.to_new_array(new.alloc);
 	StringList new_keys;
 	new_keys.new_init_with_array(old_keys, new.alloc);
 	new.keys = new_keys;
 
-	Value[] old_values = old.values.to_new_array();
+	Value[] old_values = old.values.to_new_array(alloc);
 	ValueList new_values;
 	new_values.new_init_with_array(old_values, new.alloc);
 	new.values = new_values;
