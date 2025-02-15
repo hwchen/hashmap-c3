@@ -1,4 +1,5 @@
 module test;
+import std::collections;
 import ordered_map;
 import unordered_map;
 
@@ -75,4 +76,21 @@ macro test_map_copy($MapImpl) {
 	assert(new_map.get("ACGT")!! == 2);
 
 	assert(new_map.len() == 3, "Found %d, expected 3", new_map.len());
+}
+
+def IntList = List(<int>);
+fn void test_unordered_map_get_ref_or_default() @test {
+	test_map_get_ref_or_default(UnorderedMap(<String, IntList>));
+}
+
+macro test_map_get_ref_or_default($MapImpl) {
+	$MapImpl map;
+	map.init(allocator::temp(), capacity: 2);
+	IntList intlist;
+	intlist.temp_init();
+	map.get_ref_or_default("A", intlist);
+	assert(map.has_key("A"));
+	assert(map.get("A")!!.len() == 0);
+	map.get_ref("A")!!.push(1);
+	assert(map.get("A")!![0] == 1);
 }

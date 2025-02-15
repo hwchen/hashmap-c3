@@ -99,6 +99,43 @@ fn Value*! UnorderedMap.get_ref(&self, Key key) {
 	}
 }
 
+fn Value* UnorderedMap.get_ref_or_default(&self, Key key, Value default_value) {
+	// If the map isn't initialized, use the defaults to initialize it.
+	if (!self.alloc) {
+		self.init(allocator::heap());
+	}
+	// max load 80%
+	if ((float)self.count * 1.25 >= self.metadatas.len) {
+		self.realloc();
+	}
+	ulong hash = key.myhash();
+	ulong mask = self.metadatas.len - 1;
+	ulong idx = hash & mask;
+
+	while (true) {
+		if (!self.metadatas[idx].used) {
+			self.metadatas[idx].used = true;
+			self.metadatas[idx].set_fingerprint(hash);
+			self.count += 1;
+			self.entries[idx].key = key;
+			self.entries[idx].value = default_value;
+			return &self.entries[idx].value;
+		}
+
+		char fingerprint = (char)(hash >> (64 - 7));
+		if (self.metadatas[idx].fingerprint != fingerprint) {
+			// slot is used but fingerprints differ, continue.
+			idx = (idx + 1) & mask;
+		}
+
+		Key k = self.entries[idx].key;
+		if (k == key) {
+			return &self.entries[idx].value;
+		}
+		idx = (idx + 1) & mask;
+	}
+}
+
 fn Value! UnorderedMap.get(&self, Key key) {
 	return *self.get_ref(key);
 }
