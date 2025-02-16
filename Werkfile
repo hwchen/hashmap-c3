@@ -21,10 +21,19 @@ build "testrun" {
     run "c3c compile-test --no-run <in*> -o <out>"
 }
 
+build "zig-insert-100M" {
+    from "bench/insert_100M.zig"
+    run "zig build-exe -OReleaseFast <in> -femit-bin=<out>"
+}
+
 task bench {
     let bench_exe = "benchit"
     build bench_exe
     run "<bench_exe>"
+
+    let zig_insert_exe = "zig-insert-100M"
+    build zig_insert_exe
+    run "<zig_insert_exe>"
 }
 
 task test {
