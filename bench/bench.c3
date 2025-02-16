@@ -12,17 +12,17 @@ import unordered_map;
 
 fn void main() {
 	//construction_destruction(OrderedMap(<String, ulong>));
-	//construction_destruction(UnorderedMap(<String, ulong>));
+	//construction_destruction(UnorderedMap(<String, ulong>)no-capture );
 	//construction_destruction(HashMap(<String, ulong>));
 	//construction_insert_one_int_destruction(OrderedMap(<int, int>));
 	//construction_insert_one_int_destruction(UnorderedMap(<int, int>));
 	//construction_insert_one_int_destruction(HashMap(<int, int>));
 
-	insert_erase_100M_int(OrderedMap(<int, int>));
+	//insert_erase_100M_int(OrderedMap(<int, int>));
 	insert_erase_100M_int(UnorderedMap(<int, int>));
 
 	// On chenbot, takes 9.2GB, where unordered_map takes 2.4GB
-	// insert_erase_100M_int(HashMap(<int, int>));
+	//insert_erase_100M_int(HashMap(<int, int>));
 }
 
 macro construction_destruction($MapImpl) {
@@ -55,14 +55,18 @@ macro construction_insert_one_int_destruction($MapImpl) {
 
 macro insert_erase_100M_int($MapImpl) {
 	io::eprintfn("Insert and erase 100M int %s", $MapImpl.nameof);
+	Sfc64Random rng;
+	int seed = 29301093;
+	random::seed(&rng, seed);
 	@pool() {
 		$MapImpl mymap;
 		mymap.init(allocator::temp());
 
 		// 100M inserts
+		random::seed(&rng, seed);
 		Clock clock = clock::now();
 		for (int n = 0; n < 100_000_000; n += 1) {
-			int x = rand(int.max);
+			int x = random::next_in_range(&rng, 0, int.max);
 			mymap.set(x, n);
 		}
 		NanoDuration insert_0_time = clock.mark();
@@ -75,12 +79,24 @@ macro insert_erase_100M_int($MapImpl) {
 		io::eprintfn("  clear: %s", clear_time);
 
 		// 100M inserts
+		random::seed(&rng, seed);
 		clock.mark();
 		for (int n = 0; n < 100_000_000; n += 1) {
-			int x = rand(int.max);
+			int x = random::next_in_range(&rng, 0, int.max);
 			mymap.set(x, n);
 		}
 		NanoDuration insert_1_time = clock.mark();
 		io::eprintfn("  reinsert 100M int: %s", insert_1_time);
+
+		// 100M removals
+		random::seed(&rng, seed);
+		clock.mark();
+		for (int n = 0; n < 100_000_000; n += 1) {
+			int x = random::next_in_range(&rng, 0, int.max);
+			mymap.remove(x);
+		}
+		NanoDuration remove_time = clock.mark();
+		assert(mymap.len() == 0);
+		io::eprintfn("  remove 100M int: %s", remove_time);
 	};
 }
