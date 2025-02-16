@@ -95,6 +95,10 @@ macro test_map_get_ref_or_default($MapImpl) {
 	assert(map.get("A")!![0] == 1);
 }
 
+fn void test_ordered_map_clear() @test {
+	test_map_clear(OrderedMap(<int, int>));
+}
+
 fn void test_unordered_map_clear() @test {
 	test_map_clear(UnorderedMap(<int, int>));
 }

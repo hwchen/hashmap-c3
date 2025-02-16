@@ -18,6 +18,7 @@ fn void main() {
 	//construction_insert_one_int_destruction(UnorderedMap(<int, int>));
 	//construction_insert_one_int_destruction(HashMap(<int, int>));
 
+	insert_erase_100M_int(OrderedMap(<int, int>));
 	insert_erase_100M_int(UnorderedMap(<int, int>));
 
 	// On chenbot, takes 9.2GB, where unordered_map takes 2.4GB

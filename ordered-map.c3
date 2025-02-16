@@ -181,3 +181,14 @@ fn OrderedMap OrderedMap.copy(&old, Allocator alloc) {
 
 	return new;
 }
+
+fn void OrderedMap.clear(&self) {
+	foreach (&entry : self.entries) {
+		*entry = {};
+	}
+	self.keys.clear();
+	self.values.clear();
+	self.keys.push({}); // junk at index 0
+	self.values.push({}); // junk at index 0
+	self.count = 0;
+}
