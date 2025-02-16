@@ -65,11 +65,16 @@ fn bool UnorderedMap.add_entry(&self, Key key, Value value) @local {
 			self.entries[idx].value = value;
 			return true;
 		}
-		Key k = self.entries[idx].key;
-		if (k == key) {
-			self.entries[idx].value = value;
-			return false;
+
+		char fingerprint = (char)(hash >> (64 - 7));
+		if (self.metadatas[idx].fingerprint == fingerprint) {
+			Key k = self.entries[idx].key;
+			if (k == key) {
+				self.entries[idx].value = value;
+				return false;
+			}
 		}
+
 		idx = (idx + 1) & mask;
 	}
 }
@@ -84,16 +89,12 @@ fn Value*! UnorderedMap.get_ref(&self, Key key) {
 		if (!self.metadatas[idx].used) {
 			return SearchResult.MISSING?;
 		}
-
 		char fingerprint = (char)(hash >> (64 - 7));
-		if (self.metadatas[idx].fingerprint != fingerprint) {
-			// slot is used but fingerprints differ, continue.
-			idx = (idx + 1) & mask;
-		}
-
-		Key k = self.entries[idx].key;
-		if (k == key) {
-			return &self.entries[idx].value;
+		if (self.metadatas[idx].fingerprint == fingerprint) {
+			Key k = self.entries[idx].key;
+			if (k == key) {
+				return &self.entries[idx].value;
+			}
 		}
 		idx = (idx + 1) & mask;
 	}
@@ -121,16 +122,12 @@ fn Value* UnorderedMap.get_ref_or_default(&self, Key key, Value default_value) {
 			self.entries[idx].value = default_value;
 			return &self.entries[idx].value;
 		}
-
 		char fingerprint = (char)(hash >> (64 - 7));
-		if (self.metadatas[idx].fingerprint != fingerprint) {
-			// slot is used but fingerprints differ, continue.
-			idx = (idx + 1) & mask;
-		}
-
-		Key k = self.entries[idx].key;
-		if (k == key) {
-			return &self.entries[idx].value;
+		if (self.metadatas[idx].fingerprint == fingerprint) {
+			Key k = self.entries[idx].key;
+			if (k == key) {
+				return &self.entries[idx].value;
+			}
 		}
 		idx = (idx + 1) & mask;
 	}
