@@ -94,3 +94,26 @@ macro test_map_get_ref_or_default($MapImpl) {
 	map.get_ref("A")!!.push(1);
 	assert(map.get("A")!![0] == 1);
 }
+
+fn void test_unordered_map_clear() @test {
+	test_map_clear(UnorderedMap(<int, int>));
+}
+
+macro test_map_clear($MapImpl) {
+	$MapImpl map;
+	map.init(allocator::temp(), capacity: 2);
+	map.set(0, 10);
+	map.set(1, 11);
+	assert(map.get(0)!! == 10);
+	assert(map.get(1)!! == 11);
+	assert(map.len() == 2);
+	map.clear();
+	assert(map.len() == 0);
+	map.set(2, 12);
+	map.set(3, 13);
+	map.set(4, 14);
+	assert(map.get(2)!! == 12);
+	assert(map.get(3)!! == 13);
+	assert(map.get(4)!! == 14);
+	assert(map.len() == 3);
+}

@@ -205,3 +205,10 @@ fn UnorderedMap UnorderedMap.copy(&old, Allocator alloc) {
 
 	return new;
 }
+
+fn void UnorderedMap.clear(&self) {
+	foreach (&metadata : self.metadatas) {
+		*metadata = {};
+	}
+	self.count = 0;
+}
