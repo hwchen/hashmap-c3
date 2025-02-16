@@ -11,15 +11,17 @@ import ordered_map;
 import unordered_map;
 
 fn void main() {
-	construction_destruction(OrderedMap(<String, ulong>));
-	construction_destruction(UnorderedMap(<String, ulong>));
-	construction_destruction(HashMap(<String, ulong>));
-	construction_insert_one_int_destruction(OrderedMap(<int, int>));
-	construction_insert_one_int_destruction(UnorderedMap(<int, int>));
-	construction_insert_one_int_destruction(HashMap(<int, int>));
-	//insert_erase_100M_int(OrderedMap(<int, int>));
+	//construction_destruction(OrderedMap(<String, ulong>));
+	//construction_destruction(UnorderedMap(<String, ulong>));
+	//construction_destruction(HashMap(<String, ulong>));
+	//construction_insert_one_int_destruction(OrderedMap(<int, int>));
+	//construction_insert_one_int_destruction(UnorderedMap(<int, int>));
+	//construction_insert_one_int_destruction(HashMap(<int, int>));
+
 	insert_erase_100M_int(UnorderedMap(<int, int>));
-	insert_erase_100M_int(HashMap(<int, int>));
+
+	// On chenbot, takes 9.2GB, where unordered_map takes 2.4GB
+	// insert_erase_100M_int(HashMap(<int, int>));
 }
 
 macro construction_destruction($MapImpl) {
@@ -55,6 +57,8 @@ macro insert_erase_100M_int($MapImpl) {
 	@pool() {
 		$MapImpl mymap;
 		mymap.init(allocator::temp());
+
+		// 100M inserts
 		Clock clock = clock::now();
 		for (int n = 0; n < 100_000_000; n += 1) {
 			int x = rand(int.max);
@@ -62,5 +66,20 @@ macro insert_erase_100M_int($MapImpl) {
 		}
 		NanoDuration insert_0_time = clock.mark();
 		io::eprintfn("  insert 100M int: %s", insert_0_time);
+
+		// Clear
+		clock.mark();
+		mymap.clear();
+		NanoDuration clear_time = clock.mark();
+		io::eprintfn("  clear: %s", clear_time);
+
+		// 100M inserts
+		clock.mark();
+		for (int n = 0; n < 100_000_000; n += 1) {
+			int x = rand(int.max);
+			mymap.set(x, n);
+		}
+		NanoDuration insert_1_time = clock.mark();
+		io::eprintfn("  reinsert 100M int: %s", insert_1_time);
 	};
 }
