@@ -207,8 +207,10 @@ fn UnorderedMap UnorderedMap.copy(&old, Allocator alloc) {
 }
 
 fn void UnorderedMap.clear(&self) {
-	foreach (&metadata : self.metadatas) {
-		*metadata = {};
-	}
+	// TODO is this correct?
+	mem::zero_volatile(bitcast(self.metadatas, char[]));
+	//foreach (&metadata : self.metadatas) {
+	//	*metadata = {};
+	//}
 	self.count = 0;
 }
