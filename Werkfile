@@ -16,9 +16,15 @@ build "benchit" {
 }
 
 build "testrun" {
-    from ["map-tests.c3", "ordered-map.c3", "unordered-map.c3", "hash.c3"]
+    from [
+        "map-tests.c3",
+        "map-tests-std.c3",
+        "ordered-map.c3",
+        "unordered-map.c3",
+        "hash.c3"
+    ]
     # Compiles and runs, ok for now because running tests is fast
-    run "c3c compile-test --no-run <in*> -o <out>"
+    run "c3c compile-test --no-run {cflags*} <in*> -o <out>"
 }
 
 build "zig-insert-100M" {

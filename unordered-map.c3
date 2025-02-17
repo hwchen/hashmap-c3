@@ -3,6 +3,7 @@
 *>
 module unordered_map(<Key, Value>);
 import std::collections::list;
+import std::io;
 import hash;
 
 struct Entry {
@@ -22,8 +23,8 @@ fn void Metadata.set_fingerprint(&m, ulong hash) {
 }
 
 // Does not handle empty strings as keys.
-struct UnorderedMap {
-	Allocator alloc;
+struct UnorderedMap (Printable) {
+	Allocator allocator;
 	usz count;
 	Metadata[] metadatas;
 	Entry[] entries;
@@ -33,20 +34,38 @@ fn void UnorderedMap.init(&self, Allocator allocator, int capacity = 16) {
 	// check that capacity is a power of 2
 	assert((capacity & (capacity - 1)) == 0, "capacity must be a power of 2");
 
-	self.alloc = allocator;
-	self.metadatas = allocator::new_array(self.alloc, Metadata, capacity);
-	self.entries = allocator::new_array(self.alloc, Entry, capacity);
+	self.allocator = allocator;
+	self.metadatas = allocator::new_array(self.allocator, Metadata, capacity);
+	self.entries = allocator::new_array(self.allocator, Entry, capacity);
+}
+
+fn void UnorderedMap.temp_init(&self, int capacity = 16) {
+	self.init(allocator::temp());
+}
+
+fn bool UnorderedMap.is_initialized(&self) {
+	return (bool)self.allocator;
+}
+
+fn void UnorderedMap.free(&self) {
+	if (!self.allocator) return;
+	allocator::free(self.allocator, self.metadatas);
+	allocator::free(self.allocator, self.entries);
+}
+
+fn bool UnorderedMap.is_empty(self) {
+	return self.count == 0;
 }
 
 // returns true if entry already exists.
-fn bool UnorderedMap.set(&self, Key key, Value value) {
+fn bool UnorderedMap.set(&self, Key key, Value value) @operator([]=) {
 	// If the map isn't initialized, use the defaults to initialize it.
-	if (!self.alloc) {
+	if (!self.allocator) {
 		self.init(allocator::heap());
 	}
 	// max load 80%
 	if ((float)self.count * 1.25 >= self.metadatas.len) {
-		self.realloc();
+		self.reallocator();
 	}
 
 	return self.add_entry(key, value);
@@ -102,12 +121,12 @@ fn Value*! UnorderedMap.get_ref(&self, Key key) {
 
 fn Value* UnorderedMap.get_ref_or_default(&self, Key key, Value default_value) {
 	// If the map isn't initialized, use the defaults to initialize it.
-	if (!self.alloc) {
+	if (!self.allocator) {
 		self.init(allocator::heap());
 	}
 	// max load 80%
 	if ((float)self.count * 1.25 >= self.metadatas.len) {
-		self.realloc();
+		self.reallocator();
 	}
 	ulong hash = key.myhash();
 	ulong mask = self.metadatas.len - 1;
@@ -141,11 +160,11 @@ fn bool UnorderedMap.has_key(&self, Key key) {
 	return @ok(self.get_ref(key));
 }
 
-fn void UnorderedMap.realloc(&self) {
+fn void UnorderedMap.reallocator(&self) {
 	Metadata[] old_metadatas = self.metadatas;
-	self.metadatas = allocator::new_array(self.alloc, Metadata, old_metadatas.len * 2);
+	self.metadatas = allocator::new_array(self.allocator, Metadata, old_metadatas.len * 2);
 	Entry[] old_entries = self.entries;
-	self.entries = allocator::new_array(self.alloc, Entry, old_entries.len * 2);
+	self.entries = allocator::new_array(self.allocator, Entry, old_entries.len * 2);
 
 	usz old_count = self.count;
 	self.count = 0;
@@ -156,14 +175,23 @@ fn void UnorderedMap.realloc(&self) {
 		if (self.count == old_count) break;
 	}
 
-	allocator::free(self.alloc, old_metadatas);
-	allocator::free(self.alloc, old_entries);
+	allocator::free(self.allocator, old_metadatas);
+	allocator::free(self.allocator, old_entries);
 }
 
 macro UnorderedMap.@each(self; @body(key, value)) {
 	foreach (idx, metadata : self.metadatas) {
 		if (metadata.used) {
 			@body(self.entries[idx].key, self.entries[idx].value);
+		}
+	}
+}
+
+// TODO improve iteration?
+macro UnorderedMap.@each_entry(self; @body(entry)) {
+	foreach (idx, metadata : self.metadatas) {
+		if (metadata.used) {
+			@body(self.entries[idx]);
 		}
 	}
 }
@@ -194,13 +222,13 @@ fn void! UnorderedMap.remove(&self, Key key) @maydiscard {
 }
 
 // Shallow copy on keys string data, only copies the fat pointer.
-fn UnorderedMap UnorderedMap.copy(&old, Allocator alloc) {
+fn UnorderedMap UnorderedMap.copy(&old, Allocator allocator) {
 	UnorderedMap(<Key, Value>) new;
-	new.alloc = alloc;
+	new.allocator = allocator;
 	new.count = old.count;
-	new.metadatas = allocator::new_array(new.alloc, Metadata, old.metadatas.len);
+	new.metadatas = allocator::new_array(new.allocator, Metadata, old.metadatas.len);
 	new.metadatas[..] = old.metadatas[..];
-	new.entries = allocator::new_array(new.alloc, Entry, old.entries.len);
+	new.entries = allocator::new_array(new.allocator, Entry, old.entries.len);
 	new.entries[..] = old.entries[..];
 
 	return new;
@@ -213,4 +241,14 @@ fn void UnorderedMap.clear(&self) {
 	//	*metadata = {};
 	//}
 	self.count = 0;
+}
+
+fn usz! UnorderedMap.to_format(&self, Formatter* f) @dynamic {
+	usz len;
+	len += f.print("{ ")!;
+	self.@each_entry(; Entry entry) {
+		if (len > 2) len += f.print(", ")!;
+		len += f.printf("%s: %s", entry.key, entry.value)!;
+    };
+	return len + f.print(" }");
 }
