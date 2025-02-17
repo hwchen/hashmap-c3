@@ -26,6 +26,11 @@ build "zig-insert-100M" {
     run "zig build-exe -OReleaseFast <in> -femit-bin=<out>"
 }
 
+build "odin-insert-100M" {
+    from "bench/insert_100M.odin"
+    run " odin build <in> -file -o:aggressive -out:<out>"
+}
+
 task bench {
     let bench_exe = "benchit"
     build bench_exe
@@ -34,6 +39,10 @@ task bench {
     let zig_insert_exe = "zig-insert-100M"
     build zig_insert_exe
     run "<zig_insert_exe>"
+
+    let odin_insert_exe = "odin-insert-100M"
+    build odin_insert_exe
+    run "<odin_insert_exe>"
 }
 
 task test {

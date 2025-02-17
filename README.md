@@ -21,12 +21,11 @@ Main motivation is performance, but also:
 
 ## TODO
 
-- compare to odin as well as zig
+- fuzz?
+- finish martin benchmarks
 - implement removal with tombstones?
 - check that Metadata bitstruct and fingerprint is used correctly.
 - check that clear with `zero` is done correctly.
 - more tests?
-- fuzz?
-- finish martin benchmarks
 - test on c3 hashmap tests
 - docs and review
