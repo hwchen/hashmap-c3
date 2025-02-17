@@ -75,4 +75,44 @@ Insert and erase 100M int: zig hashmap
 ```
 3.6GB ordered map
 2.3GB unordered map
-9.5GB std hashmap
+9.5GB initial insert, 16.5 on reinsert std hashmap
+2.3GB zig hashmap
+
+Now with odin, on chenbot:
+```
+Parent commit: urzyywzt 9d1fd2f0 main | Bench odin insert_100M
+hashmap-c3 rsvt| > werk bench
+[ ok ] /odin-insert-100M
+[ ok ] /benchit
+Insert and erase 100M int OrderedMap
+  insert 100M int: 23.898s
+  clear: 225ms669µs525ns
+  reinsert 100M int: 10.656s
+  remove 100M int: 22.924s
+Insert and erase 100M int UnorderedMap
+  insert 100M int: 11.686s
+  clear: 8ms887µs633ns
+  reinsert 100M int: 8.4s
+  remove 100M int: 6.579s
+Insert and erase 100M int HashMap
+  insert 100M int: 34.241s
+  clear: 6.532s
+  reinsert 100M int: 22.777s
+  remove 100M int: 11.642s
+Insert and erase 100M int: zig hashmap
+  insert 100M int: 12s
+  clear: 0s
+  reinsert 100M int: 8s
+  remove 100M int: 5s
+Insert and erase 100M int odin hashmap
+  insert 100M int: 51.872967706s
+  clear: 72.220116ms
+  reinsert 100M int: 27.339313099s
+  remove 100M int: 23.947247196s
+[ ok ] bench
+```
+3GB odin hashmap (but weird allocation pattern, goes up and down during realloc)
+
+Odin is quite slow, I manually checked the times to make sure I didn't somehow implement the timer incorrectly. Maybe it's not a big deal for the language because they use it mostly for config or small hashmaps (because most users make games with Odin) and vectors/array do the heavy lifting.
+
+But for data processing (like checking uniqueness), fast hashmaps for all scales are important.
