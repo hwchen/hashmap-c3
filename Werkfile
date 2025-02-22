@@ -1,4 +1,4 @@
-config default = "bench"
+config default = "build"
 
 let profile = "release"
 
@@ -35,6 +35,10 @@ build "zig-insert-100M" {
 build "odin-insert-100M" {
     from "bench/insert_100M.odin"
     run " odin build <in> -file -o:aggressive -out:<out>"
+}
+
+task build {
+    build "benchit"
 }
 
 task bench {
