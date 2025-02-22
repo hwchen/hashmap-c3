@@ -2,14 +2,100 @@
 
 = Bench Results
 
-Benchmark follows
+== Insert few integers
 
-// in milliseconds
-#let xs = (0,100*1000,1000*1000,10*1000*1000,100*1000*1000)
-#let std_ys = (0,6,96,1137,14892)
-#let new_ys = (0,29,388,4488,0)
+Insert integers from 100,000 to 5,000,000; every 200,000
+
+// in seconds
+#let xs = (
+    0100000,
+    0600000,
+    1100000,
+    1600000,
+    2100000,
+    2600000,
+    3100000,
+    3600000,
+    4100000,
+    4600000,
+    5100000,
+)
+#let new_ys = (
+    0.004,
+    0.033,
+    0.068,
+    0.085,
+    0.146,
+    0.168,
+    0.193,
+    0.297,
+    0.323,
+    0.352,
+    0.378,
+)
+#let std_ys = (
+    0.013,
+    0.122,
+    0.283,
+    0.454,
+    0.535,
+    0.646,
+    0.752,
+    0.977,
+    1.122,
+    1.182,
+    1.294,
+)
 
 #lq.diagram(
-  lq.plot(xs, std_ys),
   lq.plot(xs, new_ys),
+  lq.plot(xs, std_ys),
+  xlabel: "integers inserted",
+  ylabel: "seconds",
+)
+
+== Insert many integers
+
+Insert integers from 1,000 to 1,000,000,000 
+
+- 18GB for 1 billion on chenbot
+- 56.7G on chenbot for 1 billion was not enough, OOM killed
+
+
+// in seconds
+#let big_xs = (
+    1000,
+    10*1000,
+    100*1000,
+    1000*1000,
+    10*1000*1000,
+    100*1000*1000,
+    //1000*1000*1000,
+)
+#let big_new_ys = (
+    0.000077,
+    0.000712,
+    0.004,
+    0.067,
+    0.864,
+    11.735,
+    //(2*60) + 20441,
+)
+#let big_std_ys = (
+    0.000077,
+    0.000966,
+    0.012,
+    0.263,
+    2.602,
+    32.455,
+    // no value for std
+)
+
+#lq.diagram(
+  lq.plot(big_xs, big_new_ys),
+  lq.plot(big_xs, big_std_ys),
+  xscale: "log",
+  //yscale: "log",
+  xlabel: "integers inserted",
+  ylabel: "seconds",
 )
