@@ -2,6 +2,8 @@
 
 = Bench Results
 
+Run on chenbot, AMD ryzen
+
 == Insert few integers
 
 Insert integers from 100,000 to 5,000,000; every 200,000
@@ -46,10 +48,24 @@ Insert integers from 100,000 to 5,000,000; every 200,000
     1.182,
     1.294,
 )
+#let odin_ys = (
+    0.018,
+    0.118,
+    0.228,
+    0.570,
+    0.650,
+    0.735,
+    0.848,
+    1.362,
+    1.429,
+    1.530,
+    1.627,
+)
 
 #lq.diagram(
   lq.plot(xs, new_ys),
   lq.plot(xs, std_ys),
+  lq.plot(xs, odin_ys),
   xlabel: "integers inserted",
   ylabel: "seconds",
 )
@@ -88,12 +104,22 @@ Insert integers from 1,000 to 1,000,000,000
     0.263,
     2.602,
     32.455,
-    // no value for std
+    // OOM,
+)
+#let big_odin_ys = (
+    0.000217,
+    0.001955,
+    0.017696,
+    0.266,
+    3.667,
+    151.497,
+    // OOM,
 )
 
 #lq.diagram(
   lq.plot(big_xs, big_new_ys),
   lq.plot(big_xs, big_std_ys),
+  lq.plot(big_xs, big_odin_ys),
   xscale: "log",
   //yscale: "log",
   xlabel: "integers inserted",

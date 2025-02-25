@@ -27,8 +27,8 @@ build "testrun" {
     run "c3c compile-test --no-run {cflags*} <in*> -o <out>"
 }
 
-build "zig-insert-100M" {
-    from "bench/insert_100M.zig"
+build "benchit-zig" {
+    from "bench/bench.zig"
     run "zig build-exe -OReleaseFast <in> -femit-bin=<out>"
 }
 
@@ -43,6 +43,10 @@ task build {
 
 task build-odin {
     build "benchit-odin"
+}
+
+task build-zig {
+    build "benchit-zig"
 }
 
 task bench {
