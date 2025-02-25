@@ -61,11 +61,25 @@ Insert integers from 100,000 to 5,000,000; every 200,000
     1.530,
     1.627,
 )
+#let zig_ys = (
+    0.003,
+    0.029,
+    0.061,
+    0.076,
+    0.128,
+    0.145,
+    0.174,
+    0.265,
+    0.284,
+    0.319,
+    0.348,
+)
 
 #lq.diagram(
   lq.plot(xs, new_ys),
   lq.plot(xs, std_ys),
   lq.plot(xs, odin_ys),
+  lq.plot(xs, zig_ys),
   xlabel: "integers inserted",
   ylabel: "seconds",
 )
@@ -115,11 +129,21 @@ Insert integers from 1,000 to 1,000,000,000
     151.497,
     // OOM,
 )
+#let big_zig_ys = (
+    0,
+    0,
+    0.003,
+    0.055,
+    0.829,
+    12.291,
+    //1000*1000*1000,
+)
 
 #lq.diagram(
   lq.plot(big_xs, big_new_ys),
   lq.plot(big_xs, big_std_ys),
   lq.plot(big_xs, big_odin_ys),
+  lq.plot(big_xs, big_zig_ys),
   xscale: "log",
   //yscale: "log",
   xlabel: "integers inserted",
