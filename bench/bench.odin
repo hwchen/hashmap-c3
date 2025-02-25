@@ -25,6 +25,15 @@ main :: proc() {
 	insert_0_time := time.tick_lap_time(&clock)
 	fmt.eprintfln("  insert %d int: %s", limit, insert_0_time)
 
+	// Gets
+	rand.reset(seed)
+	for n := 0; n < limit; n += 1 {
+		x := rand.int_max(max(int))
+		n := mymap[x]
+	}
+	get_time := time.tick_lap_time(&clock)
+	fmt.eprintfln("  get %d int: %s", limit, get_time)
+
 	// Clear
 	clear(&mymap)
 	clear_time := time.tick_lap_time(&clock)

@@ -73,6 +73,16 @@ macro insert_erase_100M_int($MapImpl, ulong limit) {
 		NanoDuration insert_0_time = clock.mark();
 		io::eprintfn("  insert %s int:\t\t%s", limit, insert_0_time);
 
+		// Gets
+		random::seed(&rng, seed);
+		clock.mark();
+		for (int n = 0; n < limit; n += 1) {
+			int x = random::next_in_range(&rng, 0, int.max);
+			mymap.get(x)!!;
+		}
+		NanoDuration get_time = clock.mark();
+		io::eprintfn("  get %s int:\t\t%s", limit, get_time);
+
 		// Clear
 		clock.mark();
 		mymap.clear();

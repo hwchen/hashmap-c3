@@ -31,10 +31,20 @@ fn insert(gpa: std.mem.Allocator, limit: usize) !void {
     //if (map.count() != 9988484) @panic("bad count");
     std.debug.print("  insert {d} int: {}ms\n", .{ limit, timer.lap() / 1_000_000 });
 
+    // Get
+    const state = rng;
+    i = 0;
+    while (i < limit) : (i += 1) {
+        const key: i32 = @bitCast(@as(u32, @truncate(rng.next())));
+        _ = map.get(key) orelse unreachable;
+    }
+    //if (map.count() != 9988324) @panic("bad count");
+    std.debug.print("  get {d} int: {}ms\n", .{ limit, timer.lap() / 1_000_000 });
+
     map.clearRetainingCapacity();
     std.debug.print("  clear: {}ms\n", .{timer.lap() / 1_000_000});
 
-    const state = rng;
+    rng = state;
     i = 0;
     while (i < limit) : (i += 1) {
         const key: i32 = @bitCast(@as(u32, @truncate(rng.next())));
