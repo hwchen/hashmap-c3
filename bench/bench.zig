@@ -3,16 +3,19 @@ const std = @import("std");
 const bench = @import("root");
 
 pub fn main() !void {
+    var args = std.process.args();
+    _ = args.skip();
+    const limit = if (args.next()) |limit_str| try std.fmt.parseInt(usize, limit_str, 10) else 100_000_000;
+
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
     // Benchmarks ported from https://github.com/martinus/map_benchmark
-    try insert(allocator);
+    try insert(allocator, limit);
 }
 
-fn insert(gpa: std.mem.Allocator) !void {
-    std.debug.print("Insert and erase 100M int: zig hashmap\n", .{});
-    const num_iters = 100_000_000;
+fn insert(gpa: std.mem.Allocator, limit: usize) !void {
+    std.debug.print("Insert and erase {d} int: zig hashmap\n", .{limit});
 
     var rng = Sfc64.init(213);
 
@@ -21,33 +24,33 @@ fn insert(gpa: std.mem.Allocator) !void {
     var timer = try std.time.Timer.start();
 
     var i: i32 = 0;
-    while (i < num_iters) : (i += 1) {
+    while (i < limit) : (i += 1) {
         const key: i32 = @bitCast(@as(u32, @truncate(rng.next())));
         _ = map.put(key, 0) catch unreachable;
     }
     //if (map.count() != 9988484) @panic("bad count");
-    std.debug.print("  insert 100M int: {}s\n", .{timer.lap() / 1_000_000_000});
+    std.debug.print("  insert {d} int: {}ms\n", .{ limit, timer.lap() / 1_000_000 });
 
     map.clearRetainingCapacity();
-    std.debug.print("  clear: {}s\n", .{timer.lap() / 1_000_000_000});
+    std.debug.print("  clear: {}ms\n", .{timer.lap() / 1_000_000});
 
     const state = rng;
     i = 0;
-    while (i < num_iters) : (i += 1) {
+    while (i < limit) : (i += 1) {
         const key: i32 = @bitCast(@as(u32, @truncate(rng.next())));
         _ = map.put(key, 0) catch unreachable;
     }
     //if (map.count() != 9988324) @panic("bad count");
-    std.debug.print("  reinsert 100M int: {}s\n", .{timer.lap() / 1_000_000_000});
+    std.debug.print("  reinsert {d} int: {}ms\n", .{ limit, timer.lap() / 1_000_000 });
 
     rng = state;
     i = 0;
-    while (i < num_iters) : (i += 1) {
+    while (i < limit) : (i += 1) {
         const key: i32 = @bitCast(@as(u32, @truncate(rng.next())));
         _ = map.remove(key);
     }
     if (map.count() != 0) @panic("bad count");
-    std.debug.print("  remove 100M int: {}s\n", .{timer.lap() / 1_000_000_000});
+    std.debug.print("  remove {d} int: {}ms\n", .{ limit, timer.lap() / 1_000_000 });
 
     map.deinit();
 }
