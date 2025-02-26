@@ -116,3 +116,27 @@ Insert and erase 100M int odin hashmap
 Odin is quite slow, I manually checked the times to make sure I didn't somehow implement the timer incorrectly. Maybe it's not a big deal for the language because they use it mostly for config or small hashmaps (because most users make games with Odin) and vectors/array do the heavy lifting.
 
 But for data processing (like checking uniqueness), fast hashmaps for all scales are important.
+
+## 2025-02-26
+
+I think there's a bug with the fingerprint.
+
+- After implementing `get` benchmark, zig's get is way faster
+- zig's get is faster than reinsert, but unorderedmap get is slower than reinsert.
+
+```
+chenbot% ./target/benchit-zig 1000000
+Insert and erase 1000000 int: zig hashmap
+  insert 1000000 int: 59ms
+  get 1000000 int: 13ms
+  clear: 0ms
+  reinsert 1000000 int: 19ms
+  remove 1000000 int: 14ms
+chenbot% ./target/benchit 1000000
+Insert and erase 1000000 int UnorderedMap
+  insert 1000000 int:           63ms583µs71ns
+  get 1000000 int:              32ms275µs35ns
+  clear:                        28µs330ns
+  reinsert 1000000 int:         27ms46µs909ns
+  remove 1000000 int:           26ms411µs159ns
+```
