@@ -54,13 +54,27 @@ task bench {
     build bench_exe
     run "<bench_exe>"
 
-    let zig_insert_exe = "zig-insert-100M"
+    let zig_insert_exe = "benchit-zig"
     build zig_insert_exe
     run "<zig_insert_exe>"
 
     let odin_insert_exe = "benchit-odin"
     build odin_insert_exe
     run "<odin_insert_exe>"
+}
+
+task quickbench {
+    let bench_exe = "benchit"
+    build bench_exe
+    run "<bench_exe> 1000000"
+
+    let zig_insert_exe = "benchit-zig"
+    build zig_insert_exe
+    run "<zig_insert_exe> 1000000"
+
+    let odin_insert_exe = "benchit-odin"
+    build odin_insert_exe
+    run "<odin_insert_exe> 1000000"
 }
 
 task test {
