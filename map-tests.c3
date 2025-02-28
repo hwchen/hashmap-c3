@@ -121,3 +121,14 @@ macro test_map_clear($MapImpl) {
 	assert(map.get(4)!! == 14);
 	assert(map.len() == 3);
 }
+
+fn void test_fingerprint() @test {
+	ulong hash = ulong.max;
+	Metadata(<int, int>) m;
+	m.set_fingerprint(hash);
+	assert(m.fingerprint == char.max >> 1);
+	assert(m.fingerprint == (char)(hash >> (64 - 7)));
+	assert(m.matches_fingerprint(ulong.max));
+	assert(m.matches_fingerprint(ulong.max - (ulong)1));
+}
+

@@ -16,10 +16,14 @@ bitstruct Metadata: char {
 	char fingerprint: 1..7;
 }
 
-// uses high 7 bits of has for fingerprint, as low bits are
+// uses high 7 bits of hash for fingerprint, as low bits are
 // already used to find the index.
 fn void Metadata.set_fingerprint(&m, ulong hash) {
 	m.fingerprint = (char)(hash >> (64 - 7));
+}
+
+fn bool Metadata.matches_fingerprint(&m, ulong hash) {
+	return m.fingerprint == (char)(hash >> (64 - 7));
 }
 
 // Does not handle empty strings as keys.
@@ -86,7 +90,7 @@ fn bool UnorderedMap.add_entry(&self, Key key, Value value) @local {
 		}
 
 		char fingerprint = (char)(hash >> (64 - 7));
-		if (self.metadatas[idx].fingerprint == fingerprint) {
+		if (self.metadatas[idx].matches_fingerprint(hash)) {
 			Key k = self.entries[idx].key;
 			if (k == key) {
 				self.entries[idx].value = value;
@@ -108,8 +112,7 @@ fn Value*! UnorderedMap.get_ref(&self, Key key) {
 		if (!self.metadatas[idx].used) {
 			return SearchResult.MISSING?;
 		}
-		char fingerprint = (char)(hash >> (64 - 7));
-		if (self.metadatas[idx].fingerprint == fingerprint) {
+		if (self.metadatas[idx].matches_fingerprint(hash)) {
 			Key k = self.entries[idx].key;
 			if (k == key) {
 				return &self.entries[idx].value;
@@ -141,8 +144,7 @@ fn Value* UnorderedMap.get_ref_or_default(&self, Key key, Value default_value) {
 			self.entries[idx].value = default_value;
 			return &self.entries[idx].value;
 		}
-		char fingerprint = (char)(hash >> (64 - 7));
-		if (self.metadatas[idx].fingerprint == fingerprint) {
+		if (self.metadatas[idx].matches_fingerprint(hash)) {
 			Key k = self.entries[idx].key;
 			if (k == key) {
 				return &self.entries[idx].value;
