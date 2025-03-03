@@ -26,12 +26,12 @@ fn bool Metadata.matches_fingerprint(m, ulong hash) {
 	return m.fingerprint == (char)(hash >> (64 - 7));
 }
 
-fn void Metadata.set_tombstone(&m) {
+fn void Metadata.set_tombstone(&m) @inline {
 	m.fingerprint = 1;
 	m.used = false;
 }
 
-fn bool Metadata.is_tombstone(m) {
+fn bool Metadata.is_tombstone(m) @inline {
 	// depends on layout of bitstruct
 	return (char)m == 1;
 }
