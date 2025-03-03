@@ -124,11 +124,7 @@ macro test_map_clear($MapImpl) {
 
 fn void test_fingerprint() @test {
 	ulong hash = ulong.max;
-	Metadata(<int, int>) m;
-	m.set_fingerprint(hash);
-	assert(m.fingerprint == char.max >> 1);
-	assert(m.fingerprint == (char)(hash >> (64 - 7)));
-	assert(m.matches_fingerprint(ulong.max));
-	assert(m.matches_fingerprint(ulong.max - (ulong)1));
+	char fingerprint = unordered_map::take_fingerprint(<int, int>)(hash);
+	assert(fingerprint == char.max >> 1);
+	assert(fingerprint == (char)(hash >> (64 - 7)));
 }
-

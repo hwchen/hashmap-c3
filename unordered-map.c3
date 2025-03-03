@@ -11,19 +11,15 @@ struct Entry {
 	Value value;
 }
 
+// uses high 7 bits of hash for fingerprint, as low bits are
+// already used to find the index.
 bitstruct Metadata: char {
 	char fingerprint: 0..6;
 	bool used: 7;
 }
 
-// uses high 7 bits of hash for fingerprint, as low bits are
-// already used to find the index.
-fn void Metadata.set_fingerprint(&m, ulong hash) @inline {
-	m.fingerprint = (char)(hash >> (64 - 7));
-}
-
-fn bool Metadata.matches_fingerprint(m, ulong hash) @inline {
-	return m.fingerprint == (char)(hash >> (64 - 7));
+fn char take_fingerprint(ulong hash) @inline {
+	return (char)(hash >> (64 - 7));
 }
 
 fn void Metadata.set_tombstone(&m) @inline {
@@ -89,18 +85,19 @@ fn bool UnorderedMap.add_entry(&self, Key key, Value value) @local {
 	ulong hash = key.myhash();
 	ulong mask = self.metadatas.len - 1;
 	ulong idx = hash & mask;
+	char fingerprint = take_fingerprint(hash);
+
 	while (true) {
 		if (!self.metadatas[idx].used) {
 			self.metadatas[idx].used = true;
-			self.metadatas[idx].set_fingerprint(hash);
+			self.metadatas[idx].fingerprint = fingerprint;
 			self.count += 1;
 			self.entries[idx].key = key;
 			self.entries[idx].value = value;
 			return true;
 		}
 
-		char fingerprint = (char)(hash >> (64 - 7));
-		if (self.metadatas[idx].matches_fingerprint(hash)) {
+		if (self.metadatas[idx].fingerprint == fingerprint) {
 			Key k = self.entries[idx].key;
 			if (k == key) {
 				self.entries[idx].value = value;
@@ -117,12 +114,13 @@ fn Value*! UnorderedMap.get_ref(&self, Key key) {
 	ulong hash = key.myhash();
 	ulong mask = self.metadatas.len - 1;
 	ulong idx = hash & mask;
+	char fingerprint = take_fingerprint(hash);
 
 	while (true) {
 		if (!self.metadatas[idx].used) {
 			return SearchResult.MISSING?;
 		}
-		if (self.metadatas[idx].matches_fingerprint(hash)) {
+		if (self.metadatas[idx].fingerprint == fingerprint) {
 			Key k = self.entries[idx].key;
 			if (k == key) {
 				return &self.entries[idx].value;
@@ -144,17 +142,18 @@ fn Value* UnorderedMap.get_ref_or_default(&self, Key key, Value default_value) {
 	ulong hash = key.myhash();
 	ulong mask = self.metadatas.len - 1;
 	ulong idx = hash & mask;
+	char fingerprint = take_fingerprint(hash);
 
 	while (true) {
 		if (!self.metadatas[idx].used) {
 			self.metadatas[idx].used = true;
-			self.metadatas[idx].set_fingerprint(hash);
+			self.metadatas[idx].fingerprint = fingerprint;
 			self.count += 1;
 			self.entries[idx].key = key;
 			self.entries[idx].value = default_value;
 			return &self.entries[idx].value;
 		}
-		if (self.metadatas[idx].matches_fingerprint(hash)) {
+		if (self.metadatas[idx].fingerprint == fingerprint) {
 			Key k = self.entries[idx].key;
 			if (k == key) {
 				return &self.entries[idx].value;
@@ -217,6 +216,7 @@ fn void! UnorderedMap.remove(&self, Key key) @maydiscard {
 	ulong hash = key.myhash();
 	ulong mask = self.metadatas.len - 1;
 	ulong idx = hash & mask;
+	char fingerprint = take_fingerprint(hash);
 
 	while (true) {
 		switch {
@@ -224,8 +224,7 @@ fn void! UnorderedMap.remove(&self, Key key) @maydiscard {
 				break;
 			case !self.metadatas[idx].used:
 				return SearchResult.MISSING?;
-			case self.metadatas[idx].matches_fingerprint(hash):
-				// TODO use fingerprint
+			case self.metadatas[idx].fingerprint == fingerprint:
 				if (self.entries[idx].key == key) {
 					self.metadatas[idx].set_tombstone();
 					self.count -= 1;
