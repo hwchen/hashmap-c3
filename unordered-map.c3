@@ -18,11 +18,11 @@ bitstruct Metadata: char {
 
 // uses high 7 bits of hash for fingerprint, as low bits are
 // already used to find the index.
-fn void Metadata.set_fingerprint(&m, ulong hash) {
+fn void Metadata.set_fingerprint(&m, ulong hash) @inline {
 	m.fingerprint = (char)(hash >> (64 - 7));
 }
 
-fn bool Metadata.matches_fingerprint(m, ulong hash) {
+fn bool Metadata.matches_fingerprint(m, ulong hash) @inline {
 	return m.fingerprint == (char)(hash >> (64 - 7));
 }
 
