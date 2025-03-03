@@ -22,8 +22,17 @@ fn void Metadata.set_fingerprint(&m, ulong hash) {
 	m.fingerprint = (char)(hash >> (64 - 7));
 }
 
-fn bool Metadata.matches_fingerprint(&m, ulong hash) {
+fn bool Metadata.matches_fingerprint(m, ulong hash) {
 	return m.fingerprint == (char)(hash >> (64 - 7));
+}
+
+fn void Metadata.set_tombstone(&m) {
+	m.used = false;
+	m.fingerprint = 1;
+}
+
+fn bool Metadata.is_tombstone(m) {
+	return m.used == false && m.fingerprint == 1;
 }
 
 // Does not handle empty strings as keys.
@@ -209,17 +218,18 @@ fn void! UnorderedMap.remove(&self, Key key) @maydiscard {
 	ulong idx = hash & mask;
 
 	while (true) {
-		if (!self.metadatas[idx].used) {
-			return SearchResult.MISSING?;
+		switch {
+			case self.metadatas[idx].is_tombstone():
+				break;
+			case !self.metadatas[idx].used:
+				return SearchResult.MISSING?;
+			case self.entries[idx].key == key:
+				// TODO use fingerprint
+				self.metadatas[idx].set_tombstone();
+				self.count -= 1;
+				return;
 		}
-		// TODO use fingerprint
-		Key k = self.entries[idx].key;
-		if (k == key) {
-			self.metadatas[idx].used = false;
-			self.count -= 1;
-			return;
-		}
-		idx = (idx + 1) % self.metadatas.len;
+		idx = (idx + 1) & mask;
 	}
 }
 
