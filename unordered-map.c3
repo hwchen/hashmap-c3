@@ -224,11 +224,13 @@ fn void! UnorderedMap.remove(&self, Key key) @maydiscard {
 				break;
 			case !self.metadatas[idx].used:
 				return SearchResult.MISSING?;
-			case self.entries[idx].key == key:
+			case self.metadatas[idx].matches_fingerprint(hash):
 				// TODO use fingerprint
-				self.metadatas[idx].set_tombstone();
-				self.count -= 1;
-				return;
+				if (self.entries[idx].key == key) {
+					self.metadatas[idx].set_tombstone();
+					self.count -= 1;
+					return;
+				}
 		}
 		idx = (idx + 1) & mask;
 	}
