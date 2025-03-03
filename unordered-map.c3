@@ -165,7 +165,7 @@ fn Value* UnorderedMap.get_ref_or_default(&self, Key key, Value default_value) {
 }
 
 fn Value! UnorderedMap.get(&self, Key key) {
-	return *self.get_ref(key);
+	return *self.get_ref(key) @inline;
 }
 
 fn bool UnorderedMap.has_key(&self, Key key) {
