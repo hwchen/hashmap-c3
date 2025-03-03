@@ -12,8 +12,8 @@ struct Entry {
 }
 
 bitstruct Metadata: char {
-	bool used: 0;
-	char fingerprint: 1..7;
+	char fingerprint: 0..6;
+	bool used: 7;
 }
 
 // uses high 7 bits of hash for fingerprint, as low bits are
@@ -27,12 +27,13 @@ fn bool Metadata.matches_fingerprint(m, ulong hash) {
 }
 
 fn void Metadata.set_tombstone(&m) {
-	m.used = false;
 	m.fingerprint = 1;
+	m.used = false;
 }
 
 fn bool Metadata.is_tombstone(m) {
-	return m.used == false && m.fingerprint == 1;
+	// depends on layout of bitstruct
+	return (char)m == 1;
 }
 
 // Does not handle empty strings as keys.
