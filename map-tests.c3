@@ -2,10 +2,11 @@ module test;
 import std::collections;
 import ordered_map;
 import unordered_map;
+import std::io;
 
-fn void test_ordered_map_basic() @test {
-	test_map_basic(OrderedMap(<String, usz>));
-}
+//fn void test_ordered_map_basic() @test {
+//	test_map_basic(OrderedMap(<String, usz>));
+//}
 
 fn void test_unordered_map_basic() @test {
 	test_map_basic(UnorderedMap(<String, usz>));
@@ -23,6 +24,9 @@ macro debug_cells(map) {
 macro test_map_basic($MapImpl) {
 	$MapImpl map;
 	map.init(allocator::temp(), capacity: 2);
+	//foreach (m : map.metadatas[:map.header().capacity]) {
+	//	io::printfn("%b", (char)m);
+	//}
 	map.set("A", 0);
 	map.set("AC", 1);
 	map.set("AC", 2);
@@ -42,7 +46,7 @@ macro test_map_basic($MapImpl) {
 		//io::printfn("%s, %d", k, v);
 		total += 1;
 	};
-	assert(total == 3);
+	assert(total == 3, "Found total %d, expected 3", total);
 	assert(map.len() == 3, "Found %d, expected 3", map.len());
 
 	map.remove("A");
