@@ -41,7 +41,8 @@ struct UnorderedMap (Printable) {
 
 struct Header {
 	uint capacity;
-	Entry* entries;
+	Key* keys;
+	Value* values;
 }
 
 fn void* UnorderedMap.alloc_start(&self) @inline {
@@ -49,17 +50,27 @@ fn void* UnorderedMap.alloc_start(&self) @inline {
 }
 
 fn usz alloc_len(uint capacity) @private {
-	return entries_start(capacity) + (Entry.sizeof * capacity);
+	return values_start(capacity) + (Value.sizeof * capacity);
 }
 
-fn usz entries_start(uint capacity) @inline @private {
+fn usz keys_start(uint capacity) @inline @private {
 	usz metadatas_len = Header.sizeof + (Metadata.sizeof * capacity);
 	return mem::aligned_offset(metadatas_len, 8);
 }
 
-fn void* entries_ptr(void* ptr, uint capacity) @inline @private {
+fn usz values_start(uint capacity) @inline @private {
+	usz values_len = keys_start(capacity) + (Key.sizeof * capacity);
+	return mem::aligned_offset(values_len, 8);
+}
+
+fn void* keys_ptr(void* ptr, uint capacity) @inline @private {
 	usz metadatas_end = (uptr)ptr + Header.sizeof + (Metadata.sizeof * capacity);
 	return mem::aligned_pointer((void*)metadatas_end, 8);
+}
+
+fn void* values_ptr(void* ptr, uint capacity) @inline @private {
+	void* keys_end = keys_ptr(ptr, capacity) + (Key.sizeof * capacity);
+	return mem::aligned_pointer(keys_end, 8);
 }
 
 fn void UnorderedMap.init(&self, Allocator allocator, uint capacity = 16) {
@@ -70,7 +81,8 @@ fn void UnorderedMap.init(&self, Allocator allocator, uint capacity = 16) {
 	void* ptr = allocator::calloc(self.allocator, alloc_len(capacity));
 	self.metadatas = ptr + Header.sizeof;
 	self.header().capacity = capacity;
-	self.header().entries = entries_ptr(ptr, capacity);
+	self.header().keys = keys_ptr(ptr, capacity);
+	self.header().values = values_ptr(ptr, capacity);
 }
 
 fn Header* UnorderedMap.header(&self) @inline {
@@ -119,15 +131,15 @@ fn bool UnorderedMap.add_entry(&self, Key key, Value value) @local {
 			self.metadatas[idx].used = true;
 			self.metadatas[idx].fingerprint = fingerprint;
 			self.count += 1;
-			self.header().entries[idx].key = key;
-			self.header().entries[idx].value = value;
+			self.header().keys[idx] = key;
+			self.header().values[idx] = value;
 			return true;
 		}
 
 		if (self.metadatas[idx].fingerprint == fingerprint) {
-			Key k = self.header().entries[idx].key;
+			Key k = self.header().keys[idx];
 			if (k == key) {
-				self.header().entries[idx].value = value;
+				self.header().values[idx] = value;
 				return false;
 			}
 		}
@@ -148,9 +160,9 @@ fn Value*! UnorderedMap.get_ref(&self, Key key) {
 			return SearchResult.MISSING?;
 		}
 		if (self.metadatas[idx].fingerprint == fingerprint) {
-			Key k = self.header().entries[idx].key;
+			Key k = self.header().keys[idx];
 			if (k == key) {
-				return &self.header().entries[idx].value;
+				return &self.header().values[idx];
 			}
 		}
 		idx = (idx + 1) & mask;
@@ -176,14 +188,14 @@ fn Value* UnorderedMap.get_ref_or_default(&self, Key key, Value default_value) {
 			self.metadatas[idx].used = true;
 			self.metadatas[idx].fingerprint = fingerprint;
 			self.count += 1;
-			self.header().entries[idx].key = key;
-			self.header().entries[idx].value = default_value;
-			return &self.header().entries[idx].value;
+			self.header().keys[idx] = key;
+			self.header().values[idx] = default_value;
+			return &self.header().values[idx];
 		}
 		if (self.metadatas[idx].fingerprint == fingerprint) {
-			Key k = self.header().entries[idx].key;
+			Key k = self.header().keys[idx];
 			if (k == key) {
-				return &self.header().entries[idx].value;
+				return &self.header().values[idx];
 			}
 		}
 		idx = (idx + 1) & mask;
@@ -202,18 +214,20 @@ fn void UnorderedMap.reallocator(&self) {
 	uint old_capacity = self.header().capacity;
 	uint capacity = self.header().capacity * 2;
 	Metadata* old_metadatas = self.metadatas;
-	Entry* old_entries = self.header().entries;
+	Key* old_keys = self.header().keys;
+	Value* old_values = self.header().values;
 
 	void* ptr = allocator::calloc(self.allocator, Header.sizeof + (Metadata.sizeof * capacity) + (Entry.sizeof * capacity));
 	self.metadatas = ptr + Header.sizeof;
 	self.header().capacity = capacity;
-	self.header().entries = entries_ptr(ptr, capacity);
+	self.header().keys = keys_ptr(ptr, capacity);
+	self.header().values = values_ptr(ptr, capacity);
 
 	usz old_count = self.count;
 	self.count = 0;
 	foreach (idx, metadata : old_metadatas[:old_capacity]) {
 		if (metadata.used) {
-			self.add_entry(old_entries[idx].key, old_entries[idx].value);
+			self.add_entry(old_keys[idx], old_values[idx]);
 		}
 		if (self.count == old_count) break;
 	}
@@ -224,7 +238,7 @@ fn void UnorderedMap.reallocator(&self) {
 macro UnorderedMap.@each(self; @body(key, value)) {
 	foreach (idx, metadata : self.metadatas[:self.header().capacity]) {
 		if (metadata.used) {
-			@body(self.header().entries[idx].key, self.header().entries[idx].value);
+			@body(self.header().keys[idx], self.header().values[idx]);
 		}
 	}
 }
@@ -233,7 +247,7 @@ macro UnorderedMap.@each(self; @body(key, value)) {
 macro UnorderedMap.@each_entry(self; @body(entry)) {
 	foreach (idx, metadata : self.metadatas[:self.header().capacity]) {
 		if (metadata.used) {
-			@body(self.header().entries[idx]);
+			@body({self.header().keys[idx], self.header().values[idx]});
 		}
 	}
 }
@@ -256,7 +270,7 @@ fn void! UnorderedMap.remove(&self, Key key) @maydiscard {
 			case !self.metadatas[idx].used:
 				return SearchResult.MISSING?;
 			case self.metadatas[idx].fingerprint == fingerprint:
-				if (self.header().entries[idx].key == key) {
+				if (self.header().keys[idx] == key) {
 					self.metadatas[idx].set_tombstone();
 					self.count -= 1;
 					return;
