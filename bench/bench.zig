@@ -34,10 +34,13 @@ fn insert(gpa: std.mem.Allocator, limit: usize) !void {
     // Get
     rng = Sfc64.init(213);
     i = 0;
+    var total: i32 = 0;
     while (i < limit) : (i += 1) {
         const key: i32 = @bitCast(@as(u32, @truncate(rng.next())));
-        _ = map.get(key) orelse unreachable;
+        const n = map.get(key) orelse unreachable;
+        total += n;
     }
+    if (total != 0) @panic("bad total");
     //if (map.count() != 9988324) @panic("bad count");
     std.debug.print("  get {d} int: {}ms\n", .{ limit, timer.lap() / 1_000_000 });
 
