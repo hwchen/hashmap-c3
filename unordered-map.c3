@@ -312,7 +312,7 @@ fn void* values_ptr(void* ptr, uint capacity) @inline @private {
 }
 
 fn Header* UnorderedMap.header(&self) @inline {
-	return bitcast(self.metadatas - Header.sizeof, Header*);
+	return (Header*)(self.metadatas - Header.sizeof);
 }
 
 fn Key* UnorderedMap.keys(&self) @inline {
