@@ -36,7 +36,7 @@ build "testrun" {
 
 build "benchit-zig" {
     from "bench/bench.zig"
-    run "zig build-exe -OReleaseFast <in> -femit-bin=<out>"
+    run "zig build-exe -OReleaseFast -fno-strip <in> -femit-bin=<out>"
 }
 
 build "benchit-odin" {
