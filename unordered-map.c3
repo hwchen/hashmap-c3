@@ -6,71 +6,11 @@ import std::collections::list;
 import std::io;
 import hash;
 
-struct Entry {
-	Key key;
-	Value value;
-}
-
-// uses high 7 bits of hash for fingerprint, as low bits are
-// already used to find the index.
-bitstruct Metadata: char {
-	char fingerprint: 0..6;
-	bool used: 7;
-}
-
-fn char take_fingerprint(ulong hash) @inline {
-	return (char)(hash >> (64 - 7));
-}
-
-fn void Metadata.set_tombstone(&m) @inline {
-	m.fingerprint = 1;
-	m.used = false;
-}
-
-fn bool Metadata.is_tombstone(m) @inline {
-	// depends on layout of bitstruct
-	return (char)m == 1;
-}
-
 // Does not handle empty strings as keys.
 struct UnorderedMap (Printable) {
 	Allocator allocator;
 	uint count;
 	Metadata* metadatas;
-}
-
-struct Header {
-	uint capacity;
-	Key* keys;
-	Value* values;
-}
-
-fn void* UnorderedMap.alloc_start(&self) @inline {
-	return self.metadatas - Header.sizeof;
-}
-
-fn usz alloc_len(uint capacity) @private {
-	return values_start(capacity) + (Value.sizeof * capacity);
-}
-
-fn usz keys_start(uint capacity) @inline @private {
-	usz metadatas_len = Header.sizeof + (Metadata.sizeof * capacity);
-	return mem::aligned_offset(metadatas_len, 8);
-}
-
-fn usz values_start(uint capacity) @inline @private {
-	usz values_len = keys_start(capacity) + (Key.sizeof * capacity);
-	return mem::aligned_offset(values_len, 8);
-}
-
-fn void* keys_ptr(void* ptr, uint capacity) @inline @private {
-	usz metadatas_end = (uptr)ptr + Header.sizeof + (Metadata.sizeof * capacity);
-	return mem::aligned_pointer((void*)metadatas_end, 8);
-}
-
-fn void* values_ptr(void* ptr, uint capacity) @inline @private {
-	void* keys_end = keys_ptr(ptr, capacity) + (Key.sizeof * capacity);
-	return mem::aligned_pointer(keys_end, 8);
 }
 
 fn void UnorderedMap.init(&self, Allocator allocator, uint capacity = 16) {
@@ -83,10 +23,6 @@ fn void UnorderedMap.init(&self, Allocator allocator, uint capacity = 16) {
 	self.header().capacity = capacity;
 	self.header().keys = keys_ptr(ptr, capacity);
 	self.header().values = values_ptr(ptr, capacity);
-}
-
-fn Header* UnorderedMap.header(&self) @inline {
-	return bitcast(self.metadatas - Header.sizeof, Header*);
 }
 
 fn void UnorderedMap.temp_init(&self, int capacity = 16) {
@@ -113,60 +49,59 @@ fn bool UnorderedMap.set(&self, Key key, Value value) @operator([]=) {
 		self.init(allocator::heap());
 	}
 	// max load 80%
-	if ((float)self.count * 1.25 >= self.header().capacity) {
+	if ((float)self.count * 1.25 >= self.capacity()) {
 		self.reallocator();
 	}
-
 	return self.add_entry(key, value);
 }
 
 fn bool UnorderedMap.add_entry(&self, Key key, Value value) @local {
 	ulong hash = key.myhash();
-	uint mask = self.header().capacity - 1;
+	uint mask = self.capacity() - 1;
 	ulong idx = hash & mask;
 	char fingerprint = take_fingerprint(hash);
 
-	while (true) {
-		if (!self.metadatas[idx].used) {
-			self.metadatas[idx].used = true;
-			self.metadatas[idx].fingerprint = fingerprint;
-			self.count += 1;
-			self.header().keys[idx] = key;
-			self.header().values[idx] = value;
-			return true;
-		}
-
-		if (self.metadatas[idx].fingerprint == fingerprint) {
-			Key k = self.header().keys[idx];
+	// TODO try pointer?
+	Metadata metadata = self.metadatas[idx];
+	while (metadata.is_used) {
+		if (metadata.fingerprint == fingerprint) {
+			Key k = self.keys()[idx];
 			if (k == key) {
-				self.header().values[idx] = value;
+				self.values()[idx] = value;
 				return false;
 			}
 		}
-
 		idx = (idx + 1) & mask;
+		metadata = self.metadatas[idx];
 	}
+	// Found an empty slot
+	self.metadatas[idx].is_used = true;
+	self.metadatas[idx].fingerprint = fingerprint;
+	self.count += 1;
+	self.keys()[idx] = key;
+	self.values()[idx] = value;
+	return true;
 }
 
 fn Value*! UnorderedMap.get_ref(&self, Key key) {
 	if (!self.count) return SearchResult.MISSING?;
 	ulong hash = key.myhash();
-	uint mask = self.header().capacity - 1;
+	uint mask = self.capacity() - 1;
 	ulong idx = hash & mask;
 	char fingerprint = take_fingerprint(hash);
 
-	while (true) {
-		if (!self.metadatas[idx].used) {
-			return SearchResult.MISSING?;
-		}
-		if (self.metadatas[idx].fingerprint == fingerprint) {
-			Key k = self.header().keys[idx];
+	Metadata metadata = self.metadatas[idx];
+	while (metadata.is_used) {
+		if (metadata.fingerprint == fingerprint) {
+			Key k = self.keys()[idx];
 			if (k == key) {
-				return &self.header().values[idx];
+				return &self.values()[idx];
 			}
 		}
 		idx = (idx + 1) & mask;
+		metadata = self.metadatas[idx];
 	}
+	return SearchResult.MISSING?;
 }
 
 fn Value* UnorderedMap.get_ref_or_default(&self, Key key, Value default_value) {
@@ -175,31 +110,32 @@ fn Value* UnorderedMap.get_ref_or_default(&self, Key key, Value default_value) {
 		self.init(allocator::heap());
 	}
 	// max load 80%
-	if ((float)self.count * 1.25 >= self.header().capacity) {
+	if ((float)self.count * 1.25 >= self.capacity()) {
 		self.reallocator();
 	}
 	ulong hash = key.myhash();
-	uint mask = self.header().capacity - 1;
+	uint mask = self.capacity() - 1;
 	ulong idx = hash & mask;
 	char fingerprint = take_fingerprint(hash);
 
-	while (true) {
-		if (!self.metadatas[idx].used) {
-			self.metadatas[idx].used = true;
-			self.metadatas[idx].fingerprint = fingerprint;
-			self.count += 1;
-			self.header().keys[idx] = key;
-			self.header().values[idx] = default_value;
-			return &self.header().values[idx];
-		}
-		if (self.metadatas[idx].fingerprint == fingerprint) {
-			Key k = self.header().keys[idx];
+	Metadata metadata = self.metadatas[idx];
+	while (metadata.is_used) {
+		if (metadata.fingerprint == fingerprint) {
+			Key k = self.keys()[idx];
 			if (k == key) {
-				return &self.header().values[idx];
+				return &self.values()[idx];
 			}
 		}
 		idx = (idx + 1) & mask;
+		metadata = self.metadatas[idx];
 	}
+	// Found empty slot
+	self.metadatas[idx].is_used = true;
+	self.metadatas[idx].fingerprint = fingerprint;
+	self.count += 1;
+	self.keys()[idx] = key;
+	self.values()[idx] = default_value;
+	return &self.values()[idx];
 }
 
 fn Value! UnorderedMap.get(&self, Key key) {
@@ -211,11 +147,11 @@ fn bool UnorderedMap.has_key(&self, Key key) {
 }
 
 fn void UnorderedMap.reallocator(&self) {
-	uint old_capacity = self.header().capacity;
-	uint capacity = self.header().capacity * 2;
+	uint old_capacity = self.capacity();
+	uint capacity = self.capacity() * 2;
 	Metadata* old_metadatas = self.metadatas;
-	Key* old_keys = self.header().keys;
-	Value* old_values = self.header().values;
+	Key* old_keys = self.keys();
+	Value* old_values = self.values();
 
 	void* ptr = allocator::calloc(self.allocator, Header.sizeof + (Metadata.sizeof * capacity) + (Entry.sizeof * capacity));
 	self.metadatas = ptr + Header.sizeof;
@@ -226,7 +162,7 @@ fn void UnorderedMap.reallocator(&self) {
 	usz old_count = self.count;
 	self.count = 0;
 	foreach (idx, metadata : old_metadatas[:old_capacity]) {
-		if (metadata.used) {
+		if (metadata.is_used) {
 			self.add_entry(old_keys[idx], old_values[idx]);
 		}
 		if (self.count == old_count) break;
@@ -236,18 +172,18 @@ fn void UnorderedMap.reallocator(&self) {
 }
 
 macro UnorderedMap.@each(self; @body(key, value)) {
-	foreach (idx, metadata : self.metadatas[:self.header().capacity]) {
-		if (metadata.used) {
-			@body(self.header().keys[idx], self.header().values[idx]);
+	foreach (idx, metadata : self.metadatas[:self.capacity()]) {
+		if (metadata.is_used) {
+			@body(self.keys()[idx], self.values()[idx]);
 		}
 	}
 }
 
 // TODO improve iteration?
 macro UnorderedMap.@each_entry(self; @body(entry)) {
-	foreach (idx, metadata : self.metadatas[:self.header().capacity]) {
-		if (metadata.used) {
-			@body({self.header().keys[idx], self.header().values[idx]});
+	foreach (idx, metadata : self.metadatas[:self.capacity()]) {
+		if (metadata.is_used) {
+			@body({self.keys()[idx], self.values()[idx]});
 		}
 	}
 }
@@ -259,25 +195,27 @@ fn usz UnorderedMap.len(&map) @inline {
 fn void! UnorderedMap.remove(&self, Key key) @maydiscard {
 	if (!self.count) return SearchResult.MISSING?;
 	ulong hash = key.myhash();
-	uint mask = self.header().capacity - 1;
+	uint mask = self.capacity() - 1;
 	ulong idx = hash & mask;
 	char fingerprint = take_fingerprint(hash);
 
-	while (true) {
+	Metadata* metadata = &self.metadatas[idx];
+	while (metadata.is_used) {
 		switch {
-			case self.metadatas[idx].is_tombstone():
+			case metadata.is_tombstone():
 				break;
-			case !self.metadatas[idx].used:
-				return SearchResult.MISSING?;
-			case self.metadatas[idx].fingerprint == fingerprint:
-				if (self.header().keys[idx] == key) {
-					self.metadatas[idx].set_tombstone();
+			case metadata.fingerprint == fingerprint:
+				if (self.keys()[idx] == key) {
+					metadata.set_tombstone();
 					self.count -= 1;
 					return;
 				}
 		}
 		idx = (idx + 1) & mask;
+		metadata = &self.metadatas[idx];
 	}
+	// Found empty slot
+	return SearchResult.MISSING?;
 }
 
 // Shallow copy on keys string data, only copies the fat pointer.
@@ -285,8 +223,8 @@ fn UnorderedMap UnorderedMap.copy(&old, Allocator allocator) {
 	UnorderedMap(<Key, Value>) new;
 	new.allocator = allocator;
 	new.count = old.count;
-	void* ptr = allocator::calloc(new.allocator, alloc_len(old.header().capacity));
-	ptr[:alloc_len(old.header().capacity)] = old.alloc_start()[:alloc_len(old.header().capacity)];
+	void* ptr = allocator::calloc(new.allocator, alloc_len(old.capacity()));
+	ptr[:alloc_len(old.capacity())] = old.alloc_start()[:alloc_len(old.capacity())];
 	new.metadatas = ptr + Header.sizeof;
 
 	return new;
@@ -294,7 +232,7 @@ fn UnorderedMap UnorderedMap.copy(&old, Allocator allocator) {
 
 fn void UnorderedMap.clear(&self) {
 	// TODO is this correct?
-	mem::zero_volatile(bitcast(self.metadatas[:self.header().capacity], char[]));
+	mem::zero_volatile(bitcast(self.metadatas[:self.capacity()], char[]));
 	//foreach (&metadata : self.metadatas) {
 	//	*metadata = {};
 	//}
@@ -309,4 +247,82 @@ fn usz! UnorderedMap.to_format(&self, Formatter* f) @dynamic {
 		len += f.printf("%s: %s", entry.key, entry.value)!;
     };
 	return len + f.print(" }");
+}
+
+// ======= Helper structs/methods/fns =======
+
+struct Entry {
+	Key key;
+	Value value;
+}
+
+struct Header {
+	uint capacity;
+	Key* keys;
+	Value* values;
+}
+
+// uses high 7 bits of hash for fingerprint, as low bits are
+// already used to find the index.
+bitstruct Metadata: char {
+	char fingerprint: 0..6;
+	bool is_used: 7;
+}
+
+fn char take_fingerprint(ulong hash) @inline {
+	return (char)(hash >> (64 - 7));
+}
+
+fn void Metadata.set_tombstone(&m) @inline {
+	m.fingerprint = 1;
+	m.is_used = false;
+}
+
+fn bool Metadata.is_tombstone(m) @inline {
+	// depends on layout of bitstruct
+	return (char)m == 1;
+}
+
+fn void* UnorderedMap.alloc_start(&self) @inline {
+	return self.metadatas - Header.sizeof;
+}
+
+fn usz alloc_len(uint capacity) @inline @private {
+	return values_start(capacity) + (Value.sizeof * capacity);
+}
+
+fn usz keys_start(uint capacity) @inline @private {
+	usz metadatas_len = Header.sizeof + (Metadata.sizeof * capacity);
+	return mem::aligned_offset(metadatas_len, 8);
+}
+
+fn usz values_start(uint capacity) @inline @private {
+	usz values_len = keys_start(capacity) + (Key.sizeof * capacity);
+	return mem::aligned_offset(values_len, 8);
+}
+
+fn void* keys_ptr(void* ptr, uint capacity) @inline @private {
+	usz metadatas_end = (uptr)ptr + Header.sizeof + (Metadata.sizeof * capacity);
+	return mem::aligned_pointer((void*)metadatas_end, 8);
+}
+
+fn void* values_ptr(void* ptr, uint capacity) @inline @private {
+	void* keys_end = keys_ptr(ptr, capacity) + (Key.sizeof * capacity);
+	return mem::aligned_pointer(keys_end, 8);
+}
+
+fn Header* UnorderedMap.header(&self) @inline {
+	return bitcast(self.metadatas - Header.sizeof, Header*);
+}
+
+fn Key* UnorderedMap.keys(&self) @inline {
+	return self.header().keys;
+}
+
+fn Value* UnorderedMap.values(&self) @inline {
+	return self.header().values;
+}
+
+fn uint UnorderedMap.capacity(&self) @inline {
+	return self.header().capacity;
 }
