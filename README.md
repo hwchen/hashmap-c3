@@ -5,9 +5,8 @@ Generally better performance (speed and memory) than the current std HashMap imp
 I've taken the general idea of the zig hashmap
 - open address, linear probing
 - metadata array, where each metadata is a char with 1 bit `used` and 7 bits `fingerprint`
-- more naive for removal, does not use tombstones (but this may change in the future)
 
-Performance is basically the same as the zig hashmap.
+Performance is slightly slower than the zig hashmap. (Tried zig's one-allocation strategy, was not able to make it perform well in C3).
 
 It's a drop-in replacement for the std hashmap, API is the same except for addition of `get_ref_or_default`.
 
@@ -22,10 +21,6 @@ Main motivation is performance, but also:
 ## TODO
 
 - fuzz?
-- finish martin benchmarks
-- implement removal with tombstones?
-- check that Metadata bitstruct and fingerprint is used correctly.
-- check that clear with `zero` is done correctly.
 - more tests?
-- test on c3 hashmap tests
+- finish martin benchmarks
 - docs and review
