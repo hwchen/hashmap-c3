@@ -24,7 +24,7 @@ build "testrun" {
         "hash.c3"
     ]
     # Compiles and runs, ok for now because running tests is fast
-    run "c3c compile-test --no-run {cflags*} <in*> -o <out>"
+    run "c3c compile-test --suppress-run {cflags*} <in*> -o <out>"
 }
 
 build "benchit-zig" {

@@ -4,11 +4,11 @@ import ordered_map;
 import unordered_map;
 
 fn void test_ordered_map_basic() @test {
-	test_map_basic(OrderedMap(<String, usz>));
+	test_map_basic(OrderedMap{String, usz});
 }
 
 fn void test_unordered_map_basic() @test {
-	test_map_basic(UnorderedMap(<String, usz>));
+	test_map_basic(UnorderedMap{String, usz});
 }
 
 macro debug_cells(map) {
@@ -51,11 +51,11 @@ macro test_map_basic($MapImpl) {
 }
 
 fn void test_ordered_map_copy() @test {
-	test_map_copy(OrderedMap(<String, usz>));
+	test_map_copy(OrderedMap{String, usz});
 }
 
 fn void test_unordered_map_copy() @test {
-	test_map_copy(UnorderedMap(<String, usz>));
+	test_map_copy(UnorderedMap{String, usz});
 }
 
 macro test_map_copy($MapImpl) {
@@ -78,16 +78,16 @@ macro test_map_copy($MapImpl) {
 	assert(new_map.len() == 3, "Found %d, expected 3", new_map.len());
 }
 
-def IntList = List(<int>);
+alias IntList = List{int};
 fn void test_unordered_map_get_ref_or_default() @test {
-	test_map_get_ref_or_default(UnorderedMap(<String, IntList>));
+	test_map_get_ref_or_default(UnorderedMap{String, IntList});
 }
 
 macro test_map_get_ref_or_default($MapImpl) {
 	$MapImpl map;
 	map.init(allocator::temp(), capacity: 2);
 	IntList intlist;
-	intlist.temp_init();
+	intlist.tinit();
 	map.get_ref_or_default("A", intlist);
 	assert(map.has_key("A"));
 	assert(map.get("A")!!.len() == 0);
@@ -96,11 +96,11 @@ macro test_map_get_ref_or_default($MapImpl) {
 }
 
 fn void test_ordered_map_clear() @test {
-	test_map_clear(OrderedMap(<int, int>));
+	test_map_clear(OrderedMap{int, int});
 }
 
 fn void test_unordered_map_clear() @test {
-	test_map_clear(UnorderedMap(<int, int>));
+	test_map_clear(UnorderedMap{int, int});
 }
 
 macro test_map_clear($MapImpl) {
@@ -124,7 +124,7 @@ macro test_map_clear($MapImpl) {
 
 fn void test_fingerprint() @test {
 	ulong hash = ulong.max;
-	char fingerprint = unordered_map::take_fingerprint(<int, int>)(hash);
+	char fingerprint = unordered_map::take_fingerprint{int, int}(hash);
 	assert(fingerprint == char.max >> 1);
 	assert(fingerprint == (char)(hash >> (64 - 7)));
 }

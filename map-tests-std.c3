@@ -6,14 +6,14 @@ import std::io;
 
 import unordered_map;
 
-def TestHashMap = UnorderedMap(<String, usz>);
+alias TestHashMap = UnorderedMap{String, usz};
 
 struct MapTest
 {
     String key;
     usz value;
 }
-def List = List(<MapTest>);
+alias List = List{MapTest};
 
 fn void map()
 {
@@ -43,7 +43,7 @@ fn void map()
     }
 
     List list;
-    list.temp_init();
+    list.tinit();
     m.@each(;String key, usz value)
     {
         list.push({key, value});
@@ -57,7 +57,7 @@ fn void map()
     }
 }
 
-def FooMap = UnorderedMap(<char, Foobar>);
+alias FooMap = UnorderedMap{char, Foobar};
 enum Foobar : inline char
 {
     FOO,

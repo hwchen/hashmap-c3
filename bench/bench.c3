@@ -19,7 +19,7 @@ fn void main(String[] args) {
 
 	//insert_erase_100M_int(OrderedMap(<int, int>));
 	ulong n = (args.len == 2) ? args[1].to_ulong()!! : 100_000_000;
-	insert_erase_100M_int(UnorderedMap(<int, int>), n);
+	insert_erase_100M_int(UnorderedMap{int, int}, n);
 
 	// On chenbot, takes 9.2GB, where unordered_map takes 2.4GB
 	//insert_erase_100M_int(HashMap(<int, int>), n);
