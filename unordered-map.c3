@@ -49,7 +49,7 @@ fn void UnorderedMap.init(&self, Allocator allocator, int capacity = 16) {
 	self.entries = allocator::new_array(self.allocator, Entry, capacity);
 }
 
-fn void UnorderedMap.temp_init(&self, int capacity = 16) {
+fn void UnorderedMap.tinit(&self, int capacity = 16) {
 	self.init(allocator::temp());
 }
 

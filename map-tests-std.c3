@@ -19,7 +19,7 @@ fn void map()
 {
     TestHashMap m;
     assert(!m.is_initialized());
-    m.temp_init();
+    m.tinit();
     assert(m.is_initialized());
     assert(m.is_empty());
     assert(m.len() == 0);
@@ -88,7 +88,7 @@ fn void map_remove()
 {
 	TestHashMap m;
 	assert(!@ok(m.remove("A")));
-	m.temp_init();
+	m.tinit();
 	assert(!@ok(m.remove("A")));
 	m.set("A", 0);
 	assert(@ok(m.remove("A")));
