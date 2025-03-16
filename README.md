@@ -10,6 +10,8 @@ Performance is slightly slower than the zig hashmap. (Tried zig's one-allocation
 
 It's a drop-in replacement for the std hashmap, API is the same except for addition of `get_ref_or_default`.
 
+(There's also an ordered map in this repo; development is not serious at this time)
+
 ## Motivation
 
 Main motivation is performance, but also:
