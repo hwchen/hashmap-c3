@@ -50,7 +50,7 @@ fn void UnorderedMap.init(&self, Allocator allocator, int capacity = 16) {
 }
 
 fn void UnorderedMap.tinit(&self, int capacity = 16) {
-	self.init(allocator::temp());
+	self.init(tmem);
 }
 
 fn bool UnorderedMap.is_initialized(&self) {
@@ -71,7 +71,7 @@ fn bool UnorderedMap.is_empty(self) {
 fn bool UnorderedMap.set(&self, Key key, Value value) @operator([]=) {
 	// If the map isn't initialized, use the defaults to initialize it.
 	if (!self.allocator) {
-		self.init(allocator::heap());
+		self.init(tmem);
 	}
 	// max load 80%
 	if ((float)self.count * 1.25 >= self.metadatas.len) {
@@ -133,7 +133,7 @@ fn Value*? UnorderedMap.get_ref(&self, Key key) {
 fn Value* UnorderedMap.get_ref_or_default(&self, Key key, Value default_value) {
 	// If the map isn't initialized, use the defaults to initialize it.
 	if (!self.allocator) {
-		self.init(allocator::heap());
+		self.init(tmem);
 	}
 	// max load 80%
 	if ((float)self.count * 1.25 >= self.metadatas.len) {
@@ -237,7 +237,7 @@ fn void? UnorderedMap.remove(&self, Key key) @maydiscard {
 
 // Shallow copy on keys string data, only copies the fat pointer.
 fn UnorderedMap UnorderedMap.copy(&old, Allocator allocator) {
-	UnorderedMap{Key, Value} new;
+	UnorderedMap new;
 	new.allocator = allocator;
 	new.count = old.count;
 	new.metadatas = allocator::new_array(new.allocator, Metadata, old.metadatas.len);
