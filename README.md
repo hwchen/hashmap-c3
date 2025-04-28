@@ -1,6 +1,6 @@
 # Hashmap for c3.
 
-Generally better performance (speed and memory) than the current std HashMap implementation.
+Equal or better performance (speed and memory) than the current std HashMap implementation, by my selected measurements :) (See numbers below).
 
 I've taken the general idea of the zig hashmap
 - open address, linear probing
@@ -31,6 +31,8 @@ port of the zig random number generator.
 
 Also, sorry for those that don't use [`werk`](https://github.com/simonask/werk), I may set up a shell script
 or something at some point.
+
+In the following benches, `UnorderedMap` is this repo's implementation, `HashMap` is C3's std implementation.
 
 `werk quickbench` 1M ints
 ```
