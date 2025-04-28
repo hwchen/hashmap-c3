@@ -1,10 +1,10 @@
 # Hashmap for c3.
 
-I've taken the general idea of the zig hashmap:
+I've taken the general idea of the [zig hashmap](https://github.com/ziglang/zig/pull/5999), which has similarities to google's swiss tables:
 - open address, linear probing
 - metadata array, where each metadata is a char with 1 bit `used` and 7 bits `fingerprint`. This should allow a higher load factor, but I have not rigorously tested this.
 
-The c3 std hashmap is chained; there are pros and cons using open addressing vs. chaining, you should choose according to your workload.
+The c3 std hashmap is chained; there are pros and cons using open addressing vs. chaining, you should choose according to your workload and your own benchmarks.
 
 Performance is slightly slower than the zig hashmap. (Tried zig's one-allocation strategy, was not able to make it perform well in C3).
 
@@ -24,6 +24,7 @@ It's a drop-in replacement for the std hashmap, API is the same except for addit
 From my workstation, "AMD Ryzen 7 3700X 8-Core Processor", 64GB RAM.
 
 This is just one benchmark, please take with a grain of salt and measure your own workload.
+Planning on implementating more benches from https://martin.ankerl.com/2019/04/01/hashmap-benchmarks-01-overview/ .
 
 Note that random number generation took a non-trivial amount of time. For C3 benchmarks, I used a
 port of the zig random number generator.
@@ -94,7 +95,7 @@ Eyeballed memory usage on `werk bench` 100M ints with htop:
 unordered map: 2.3GB
 hashmap: 8GB on first insert -> 13.7GB on reinsert
 zig: 2.3GB
-odin: 3.0GB (but strange pattern, "overallocated" to 4.6GB before dropping back to 3.0GB? Same pattern happened on the way also.)
+odin: 3.0GB (Reallocation more obvious here than on others. Went up to 4.6GB before dropping back to 3.0GB. Could be that the interval was longer, so easier to see in htop)
 ```
 
 Other perf notes: For smaller inputs, like `/usr/share/dict/words` (100,000 words) or [`related_post_gen`](https://github.com/jinyus/related_post_gen), zig and c3 stdlib hashmaps perform about the same for speed, but odin is still noticeably slower.
