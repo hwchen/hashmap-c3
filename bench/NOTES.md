@@ -140,3 +140,32 @@ Insert and erase 1000000 int UnorderedMap
   reinsert 1000000 int:         27ms46µs909ns
   remove 1000000 int:           26ms411µs159ns
 ```
+
+## 2025-07-20
+
+Moving from wyhash (my port from zig) to new wyhash2 implementation in std.
+
+Numbers from my laptop:
+
+wyhash
+```
+Insert and erase 100000000 int UnorderedMap
+  insert 100000000 int:         16.241s
+  get 100000000 int:            10.958s
+  clear:                        14ms635µs110ns
+  reinsert 100000000 int:               9.673s
+  remove 100000000 int:         11.202s
+```
+
+wyhash2
+```
+Insert and erase 100000000 int UnorderedMap
+  insert 100000000 int:         13.517s
+  get 100000000 int:            8.627s
+  clear:                        16ms197µs871ns
+  reinsert 100000000 int:               9.147s
+  remove 100000000 int:         8.674s
+Insert and erase 100000000 int HashMap
+```
+
+I might have made a mistake in my port, with unaligned loads (those were specifically fixed in wyhash2 PR). But it's in stdlib, so I'd rather use it anyways.

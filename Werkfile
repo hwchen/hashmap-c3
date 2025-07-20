@@ -16,7 +16,6 @@ build "benchit" {
         "ordered-map.c3",
         "unordered-map.c3",
         "hash.c3",
-        "wyhash.c3",
     ]
     run "c3c compile {cflags*} <in*> -o <out>"
 }
@@ -28,7 +27,6 @@ build "testrun" {
         "ordered-map.c3",
         "unordered-map.c3",
         "hash.c3",
-        "wyhash.c3",
     ]
     # Compiles and runs, ok for now because running tests is fast
     run "c3c compile-test --suppress-run {cflags*} <in*> -o <out>"
