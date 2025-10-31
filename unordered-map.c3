@@ -1,5 +1,5 @@
 <*
- @require $defined((Key){}.myhash()) `No .myhash function found on the key`
+ @require $defined((Key){}.myhash()) : `No .myhash function found on the key`
 *>
 module unordered_map{Key, Value};
 import std::collections::list;

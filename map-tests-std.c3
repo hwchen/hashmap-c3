@@ -13,7 +13,7 @@ struct MapTest
     String key;
     usz value;
 }
-alias List = List{MapTest};
+alias ListMap = List{MapTest};
 
 fn void map()
 {
@@ -42,14 +42,14 @@ fn void map()
         assert(tc.value == v);
     }
 
-    List list;
+    ListMap list;
     list.tinit();
     m.@each(;String key, usz value)
     {
         list.push({key, value});
     };
     assert(list.len() == tcases.len);
-    quicksort(list, fn int (MapTest a, MapTest b) => (int)(a.value - b.value));
+    quicksort(&list, fn int (MapTest a, MapTest b) => (int)(a.value - b.value));
     foreach (i, tc : tcases)
     {
         assert(tc.key == list[i].key);
@@ -65,7 +65,7 @@ enum Foobar : inline char
     BAZ
 }
 
-enum Foobar2 : int (inline char y)
+enum Foobar2 : const inline int
 {
 	ABC = 3,
 	DEF = 5,

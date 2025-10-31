@@ -22,7 +22,7 @@ macro debug_cells(map) {
 
 macro test_map_basic($MapImpl) {
 	$MapImpl map;
-	map.init(allocator::temp(), capacity: 2);
+	map.init(tmem, capacity: 2);
 	map.set("A", 0);
 	map.set("AC", 1);
 	map.set("AC", 2);
