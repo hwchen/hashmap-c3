@@ -16,6 +16,7 @@ build "benchit" {
         "ordered-map.c3",
         "unordered-map.c3",
         "hash.c3",
+        "swisstable.c3",
     ]
     run "c3c compile {cflags*} <in*> -o <out>"
 }

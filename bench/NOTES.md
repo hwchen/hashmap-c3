@@ -169,3 +169,68 @@ Insert and erase 100000000 int HashMap
 ```
 
 I might have made a mistake in my port, with unaligned loads (those were specifically fixed in wyhash2 PR). But it's in stdlib, so I'd rather use it anyways.
+
+# 2026-03-20
+
+Some quick benches, on new (old) laptop: Thinkpad T14s 3rd gen, AMD Ryzen 5 PRO 6650U (12) @ 4.58 GHz.
+
+Added swisstable port (from Rust), AndrewCodeDev: https://github.com/andrewCodeDev/metaphor/blob/main/src/utils/swisstable.c3
+
+```
+hashmap-c3 uolo| > werk quickbench
+[ ok ] /benchit
+Insert and erase 1000000 int SwissTable{int, int}
+  insert 1000000 int:           54ms61µs130ns
+  get 1000000 int:              34ms4µs810ns
+  clear:                        34µs571ns
+  reinsert 1000000 int:         26ms322µs201ns
+  remove 1000000 int:           42ms46µs56ns
+Insert and erase 1000000 int UnorderedMap{int, int}
+  insert 1000000 int:           58ms179µs252ns
+  get 1000000 int:              41ms639µs999ns
+  clear:                        36µs178ns
+  reinsert 1000000 int:         24ms568µs276ns
+  remove 1000000 int:           34ms166µs493ns
+Insert and erase 1000000 int HashMap{int, int}
+  insert 1000000 int:           232ms811µs852ns
+  get 1000000 int:              45ms383µs771ns
+  clear:                        50ms272µs521ns
+  reinsert 1000000 int:         175ms980µs676ns
+  remove 1000000 int:           64ms14µs421ns
+Insert and erase 1000000 int: zig hashmap
+  insert 1000000 int: 59ms
+  get 1000000 int: 31ms
+  clear: 0ms
+  reinsert 1000000 int: 24ms
+  remove 1000000 int: 25ms
+Insert and erase 1000000 int odin hashmap
+  insert 1000000 int: 315.428288ms
+  get 1000000 int: 76.878067ms
+  clear: 1.06459ms
+  reinsert 1000000 int: 145.81106ms
+  remove 1000000 int: 146.101041ms
+```
+
+```
+hashmap-c3 uolo| ❯ werk bench
+[ ok ] /benchit
+Insert and erase 100000000 int SwissTable{int, int}
+  insert 100000000 int:         11.438s
+  get 100000000 int:            8.119s
+  clear:                        11ms219µs583ns
+  reinsert 100000000 int:               9.586s
+  remove 100000000 int:         10.441s
+Insert and erase 100000000 int UnorderedMap{int, int}
+  insert 100000000 int:         12.472s
+  get 100000000 int:            8.98s
+  clear:                        11ms364µs923ns
+  reinsert 100000000 int:               8.247s
+  remove 100000000 int:         7.86s
+Insert and erase 100000000 int: zig hashmap
+  insert 100000000 int: 13914ms
+  get 100000000 int: 9027ms
+  clear: 11ms
+  reinsert 100000000 int: 9079ms
+  remove 100000000 int: 6505ms
+```
+(On my laptop, HashMap bombs out, as does odin)

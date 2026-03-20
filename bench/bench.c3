@@ -8,6 +8,7 @@ import std::io;
 import std::time::clock;
 import ordered_map;
 import unordered_map;
+import swisstable;
 
 fn void main(String[] args) {
 	//construction_destruction(OrderedMap(<String, ulong>));
@@ -17,8 +18,12 @@ fn void main(String[] args) {
 	//construction_insert_one_int_destruction(UnorderedMap(<int, int>));
 	//construction_insert_one_int_destruction(HashMap(<int, int>));
 
-	//insert_erase_100M_int(OrderedMap(<int, int>));
 	ulong n = (args.len == 2) ? args[1].to_ulong()!! : 100_000_000;
+
+	// SwissTable from AndrewCodeDev
+	insert_erase_100M_int(SwissTable{int, int}, n);
+
+	//insert_erase_100M_int(OrderedMap(<int, int>));
 	insert_erase_100M_int(UnorderedMap{int, int}, n);
 
 	// On chenbot, takes 9.2GB, where unordered_map takes 2.4GB
