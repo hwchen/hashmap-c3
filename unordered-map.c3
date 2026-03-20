@@ -32,7 +32,6 @@ fn bool Metadata.is_tombstone(m) @inline {
 	return (char)m == 1;
 }
 
-// Does not handle empty strings as keys.
 struct UnorderedMap (Printable) {
 	Allocator allocator;
 	usz count;
