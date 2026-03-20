@@ -234,3 +234,5 @@ Insert and erase 100000000 int: zig hashmap
   remove 100000000 int: 6505ms
 ```
 (On my laptop, HashMap bombs out, as does odin)
+
+TODO: switch to std hash, check load factor for zig hashmap (80%)
