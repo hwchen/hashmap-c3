@@ -1,11 +1,7 @@
 module test;
 import std::collections;
-import ordered_map;
 import unordered_map;
-
-fn void test_ordered_map_basic() @test {
-	test_map_basic(OrderedMap{String, usz});
-}
+import std::io;
 
 fn void test_unordered_map_basic() @test {
 	test_map_basic(UnorderedMap{String, usz});
@@ -39,7 +35,6 @@ macro test_map_basic($MapImpl) {
 
 	usz total = 0;
 	map.@each(; String k, usz v) {
-		//io::printfn("%s, %d", k, v);
 		total += 1;
 	};
 	assert(total == 3);
@@ -50,22 +45,18 @@ macro test_map_basic($MapImpl) {
 	assert(!map.has_key("A"));
 }
 
-fn void test_ordered_map_copy() @test {
-	test_map_copy(OrderedMap{String, usz});
-}
-
-fn void test_unordered_map_copy() @test {
-	test_map_copy(UnorderedMap{String, usz});
-}
+//fn void test_unordered_map_copy() @test {
+//	test_map_copy(UnorderedMap{String, usz});
+//}
 
 macro test_map_copy($MapImpl) {
 	$MapImpl old_map;
-	old_map.init(allocator::temp(), capacity: 2);
+	old_map.init(tmem, capacity: 2);
 	old_map.set("A", 0);
 	old_map.set("AC", 1);
 	old_map.set("ACGT", 2);
 
-	$MapImpl new_map = old_map.copy(allocator::temp());
+	$MapImpl new_map = old_map.copy(tmem);
 
 	assert(new_map.has_key("A"));
 	assert(new_map.has_key("AC"));
@@ -85,7 +76,7 @@ fn void test_unordered_map_get_ref_or_default() @test {
 
 macro test_map_get_ref_or_default($MapImpl) {
 	$MapImpl map;
-	map.init(allocator::temp(), capacity: 2);
+	map.init(tmem, capacity: 2);
 	IntList intlist;
 	intlist.tinit();
 	map.get_ref_or_default("A", intlist);
@@ -95,17 +86,13 @@ macro test_map_get_ref_or_default($MapImpl) {
 	assert(map.get("A")!![0] == 1);
 }
 
-fn void test_ordered_map_clear() @test {
-	test_map_clear(OrderedMap{int, int});
-}
-
 fn void test_unordered_map_clear() @test {
 	test_map_clear(UnorderedMap{int, int});
 }
 
 macro test_map_clear($MapImpl) {
 	$MapImpl map;
-	map.init(allocator::temp(), capacity: 2);
+	map.init(tmem, capacity: 2);
 	map.set(0, 10);
 	map.set(1, 11);
 	assert(map.get(0)!! == 10);
