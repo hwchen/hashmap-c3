@@ -7,6 +7,10 @@ fn void test_unordered_map_basic() @test {
 	test_map_basic(UnorderedMap{String, usz});
 }
 
+fn void test_unordered_map_two_hang() @test {
+	test_map_two_hang(UnorderedMap{String, usz});
+}
+
 macro debug_cells(map) {
 	foreach (idx, cell : map.cells) {
 		io::printfn("idx %d", idx);
@@ -14,6 +18,21 @@ macro debug_cells(map) {
 		io::printfn("value %d", cell.entry.value);
 		io::printfn("used %s", cell.used);
 	}
+}
+
+// Repro of example that hangs.
+// 2 is only capacity where items can == capacity.
+// A result is that has_key will never hit an empty
+// slot. As currently written, it will continue
+// to loop.
+macro test_map_two_hang($MapImpl) {
+	$MapImpl map;
+	map.init(tmem, capacity: 2);
+	map.set("AC", 1);
+	map.set("AC", 2);
+	map.set("ACGT", 3);
+
+	assert(map.has_key("A"));
 }
 
 macro test_map_basic($MapImpl) {

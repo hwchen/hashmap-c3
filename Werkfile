@@ -84,5 +84,5 @@ task quickbench {
 task test {
     let test_exe = "testrun"
     build test_exe
-    run "<test_exe>"
+    run "<test_exe> --test-show-output"
 }
