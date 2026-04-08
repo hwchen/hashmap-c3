@@ -61,11 +61,11 @@ macro construction_insert_one_int_destruction($MapImpl) {
 macro insert_erase_100M_int($MapImpl, ulong limit) {
 	io::eprintfn("Insert and erase %d int %s", limit, $MapImpl.nameof);
 	Sfc64 rng;
-	int seed = 213;
+	sz seed = 213;
 	rng.seed(seed);
 	@pool() {
 		$MapImpl mymap;
-		mymap.init(allocator::temp());
+		mymap.init(tmem);
 
 		// 100M inserts
 		rng.seed(seed);

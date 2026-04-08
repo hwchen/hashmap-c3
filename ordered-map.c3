@@ -1,4 +1,4 @@
-module ordered_map{Key, Value};
+module ordered_map<Key, Value>;
 import std::collections::list;
 import std::io;
 
@@ -19,7 +19,7 @@ fn void OrderedMap.init(&self, Allocator allocator, int capacity = 16) {
 	assert((capacity & (capacity - 1)) == 0, "capacity must be a power of 2");
 
 	self.alloc = allocator;
-	self.entries = allocator::new_array(self.alloc, usz, capacity);
+	self.entries = alloc::new_array(self.alloc, usz, capacity);
 
 	KeyList keylist;
 	keylist.init(self.alloc);
@@ -36,7 +36,7 @@ fn void OrderedMap.init(&self, Allocator allocator, int capacity = 16) {
 fn bool OrderedMap.set(&self, Key key, Value value) {
 	// If the map isn't initialized, use the defaults to initialize it.
 	if (!self.alloc) {
-		self.init(allocator::heap());
+		self.init(alloc::heap());
 	}
 	// max load 80%
 	if ((float)self.count * 1.25 >= self.entries.len) {
@@ -69,7 +69,7 @@ fn bool OrderedMap.add_entry(&self, Key key, Value value) @local {
 }
 
 fn Value*? OrderedMap.get_ref(&self, Key key) {
-	if (!self.count) return NOT_FOUND?;
+	if (!self.count) return NOT_FOUND~;
 	usz hash = key.hash();
 	usz mask = self.entries.len - 1;
 	usz idx = hash & mask;
@@ -77,7 +77,7 @@ fn Value*? OrderedMap.get_ref(&self, Key key) {
 	while (true) {
 		usz entry_idx = self.entries[idx];
 		if (entry_idx == 0) {
-			return NOT_FOUND?;
+			return NOT_FOUND~;
 		}
 		Key k = self.keys[entry_idx];
 		if (k == key) {
@@ -101,7 +101,7 @@ fn void OrderedMap.realloc(&self) {
 	KeyList old_keys = self.keys;
 	ValueList old_values = self.values;
 
-	self.entries = allocator::new_array(self.alloc, usz, old_entries.len * 2);
+	self.entries = alloc::new_array(self.alloc, usz, old_entries.len * 2);
 
 	KeyList new_keys;
 	new_keys.init(self.alloc, old_keys.len());
@@ -121,7 +121,7 @@ fn void OrderedMap.realloc(&self) {
 	}
 	self.count = old_keys.len() - 1; // account for junk value
 
-	allocator::free(self.alloc, old_entries);
+	alloc::free(self.alloc, old_entries);
 	old_keys.free();
 	old_values.free();
 }
@@ -138,7 +138,7 @@ fn usz OrderedMap.len(&map) @inline {
 }
 
 fn void? OrderedMap.remove(&self, Key key) @maydiscard {
-	if (!self.count) return NOT_FOUND?;
+	if (!self.count) return NOT_FOUND~;
 	usz hash = key.hash();
 	usz mask = self.entries.len - 1;
 	usz idx = hash & mask;
@@ -146,7 +146,7 @@ fn void? OrderedMap.remove(&self, Key key) @maydiscard {
 	while (true) {
 		usz entry_idx = self.entries[idx];
 		if (entry_idx == 0) {
-			return NOT_FOUND?;
+			return NOT_FOUND~;
 		}
 		Key k = self.keys[entry_idx];
 		if (k == key) {
@@ -166,7 +166,7 @@ fn OrderedMap OrderedMap.copy(&old, Allocator alloc) {
 	OrderedMap{Key, Value} new;
 	new.alloc = alloc;
 	new.count = old.count;
-	new.entries = allocator::new_array(new.alloc, usz, old.entries.len);
+	new.entries = alloc::new_array(new.alloc, usz, old.entries.len);
 	new.entries[..] = old.entries[..];
 
 	Key[] old_keys = old.keys.to_array(new.alloc);

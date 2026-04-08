@@ -236,3 +236,60 @@ Insert and erase 100000000 int: zig hashmap
 (On my laptop, HashMap bombs out, as does odin)
 
 TODO: switch to std hash, check load factor for zig hashmap (80%)
+
+# 2026-04-08
+
+Switch to std hash, plus some syntax changes for 0.7.11 dev
+
+Reinsert and get time seems to have improved, but not first insert time.
+
+I assume this is because hash perf improved, while something about alloc did not.
+
+```
+hashmap-c3 qnvu|🈳 ❯ werk quickbench
+[ ok ] /benchit
+Insert and erase 1000000 int SwissTable{int, int}
+  insert 1000000 int:           53ms368µs655ns
+  get 1000000 int:              31ms318µs296ns
+  clear:                        28µs6ns
+  reinsert 1000000 int:         26ms285µs394ns
+  remove 1000000 int:           42ms928µs501ns
+Insert and erase 1000000 int UnorderedMap{int, int}
+  insert 1000000 int:           53ms403µs435ns
+  get 1000000 int:              30ms480µs689ns
+  clear:                        32µs686ns
+  reinsert 1000000 int:         21ms797µs743ns
+  remove 1000000 int:           21ms719µs660ns
+Insert and erase 1000000 int: zig hashmap
+  insert 1000000 int: 56ms
+  get 1000000 int: 29ms
+  clear: 0ms
+  reinsert 1000000 int: 22ms
+  remove 1000000 int: 21ms
+Insert and erase 1000000 int odin hashmap
+  insert 1000000 int: 298.522647ms
+  get 1000000 int: 77.493927ms
+  clear: 981.201µs
+  reinsert 1000000 int: 146.647339ms
+  remove 1000000 int: 141.779402ms
+```
+```
+Insert and erase 100000000 int SwissTable{int, int}
+  insert 100000000 int:         11.672s
+  get 100000000 int:            8.14s
+  clear:                        11ms436µs579ns
+  reinsert 100000000 int:               9.677s
+  remove 100000000 int:         10.501s
+Insert and erase 100000000 int UnorderedMap{int, int}
+  insert 100000000 int:         12.346s
+  get 100000000 int:            6.847s
+  clear:                        11ms939µs926ns
+  reinsert 100000000 int:               7.158s
+  remove 100000000 int:         6.204s
+Insert and erase 100000000 int: zig hashmap
+  insert 100000000 int: 13587ms
+  get 100000000 int: 9049ms
+  clear: 12ms
+  reinsert 100000000 int: 8782ms
+  remove 100000000 int: 6528ms
+```

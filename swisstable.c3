@@ -153,7 +153,7 @@ fn SwissTable* SwissTable.tinit(&self, usz initial_capacity = 0)
 fn void SwissTable.free(&self)
 {
 	if (self.ctrl == null) return;
-	allocator::free(self.allocator, (void*)self.data);
+	alloc::free(self.allocator, (void*)self.data);
 	self.ctrl = null;
 	self.data = null;
 	self.bucket_mask = 0;
@@ -473,7 +473,7 @@ fn void SwissTable.alloc_table(&self, usz num_buckets) @local
 	usz ctrl_size = num_buckets + GROUP_WIDTH;
 	usz total_size = data_size + ctrl_size;
 
-	void* raw = allocator::calloc(self.allocator, total_size);
+	void* raw = alloc::calloc(self.allocator, total_size);
 
 	self.data = (Entry*)raw;
 	self.ctrl = (char*)raw + data_size;
@@ -520,7 +520,7 @@ fn void SwissTable.grow(&self) @local
 
 	if (old_ctrl != null)
 	{
-		allocator::free(self.allocator, (void*)old_data);
+		alloc::free(self.allocator, (void*)old_data);
 	}
 }
 

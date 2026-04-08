@@ -1,10 +1,9 @@
 <*
- @require $defined((Key){}.hash()) : `No .myhash function found on the key`
+ @require $defined((Key){}.hash()) : `No .hash function found on the key`
 *>
-module unordered_map{Key, Value};
+module unordered_map<Key, Value>;
 import std::collections::list;
 import std::io;
-import hash;
 
 struct Entry {
 	Key key;
@@ -44,8 +43,8 @@ fn void UnorderedMap.init(&self, Allocator allocator, int capacity = 16) {
 	assert((capacity & (capacity - 1)) == 0, "capacity must be a power of 2");
 
 	self.allocator = allocator;
-	self.metadatas = allocator::new_array(self.allocator, Metadata, capacity);
-	self.entries = allocator::new_array(self.allocator, Entry, capacity);
+	self.metadatas = alloc::new_array(self.allocator, Metadata, capacity);
+	self.entries = alloc::new_array(self.allocator, Entry, capacity);
 }
 
 fn void UnorderedMap.tinit(&self, int capacity = 16) {
@@ -58,8 +57,8 @@ fn bool UnorderedMap.is_initialized(&self) {
 
 fn void UnorderedMap.free(&self) {
 	if (!self.allocator) return;
-	allocator::free(self.allocator, self.metadatas);
-	allocator::free(self.allocator, self.entries);
+	alloc::free(self.allocator, self.metadatas);
+	alloc::free(self.allocator, self.entries);
 }
 
 fn bool UnorderedMap.is_empty(self) {
@@ -81,7 +80,7 @@ fn bool UnorderedMap.set(&self, Key key, Value value) @operator([]=) {
 }
 
 fn bool UnorderedMap.add_entry(&self, Key key, Value value) @local {
-	ulong hash = key.myhash();
+	ulong hash = key.hash();
 	ulong mask = self.metadatas.len - 1;
 	ulong idx = hash & mask;
 	char fingerprint = take_fingerprint(hash);
@@ -109,15 +108,15 @@ fn bool UnorderedMap.add_entry(&self, Key key, Value value) @local {
 }
 
 fn Value*? UnorderedMap.get_ref(&self, Key key) {
-	if (!self.count) return NOT_FOUND?;
-	ulong hash = key.myhash();
+	if (!self.count) return NOT_FOUND~;
+	ulong hash = key.hash();
 	ulong mask = self.metadatas.len - 1;
 	ulong idx = hash & mask;
 	char fingerprint = take_fingerprint(hash);
 
 	while (true) {
 		if (!self.metadatas[idx].used) {
-			return NOT_FOUND?;
+			return NOT_FOUND~;
 		}
 		if (self.metadatas[idx].fingerprint == fingerprint) {
 			Key k = self.entries[idx].key;
@@ -138,7 +137,7 @@ fn Value* UnorderedMap.get_ref_or_default(&self, Key key, Value default_value) {
 	if ((float)self.count * 1.25 >= self.metadatas.len) {
 		self.reallocator();
 	}
-	ulong hash = key.myhash();
+	ulong hash = key.hash();
 	ulong mask = self.metadatas.len - 1;
 	ulong idx = hash & mask;
 	char fingerprint = take_fingerprint(hash);
@@ -172,9 +171,9 @@ fn bool UnorderedMap.has_key(&self, Key key) {
 
 fn void UnorderedMap.reallocator(&self) {
 	Metadata[] old_metadatas = self.metadatas;
-	self.metadatas = allocator::new_array(self.allocator, Metadata, old_metadatas.len * 2);
+	self.metadatas = alloc::new_array(self.allocator, Metadata, old_metadatas.len * 2);
 	Entry[] old_entries = self.entries;
-	self.entries = allocator::new_array(self.allocator, Entry, old_entries.len * 2);
+	self.entries = alloc::new_array(self.allocator, Entry, old_entries.len * 2);
 
 	usz old_count = self.count;
 	self.count = 0;
@@ -185,8 +184,8 @@ fn void UnorderedMap.reallocator(&self) {
 		if (self.count == old_count) break;
 	}
 
-	allocator::free(self.allocator, old_metadatas);
-	allocator::free(self.allocator, old_entries);
+	alloc::free(self.allocator, old_metadatas);
+	alloc::free(self.allocator, old_entries);
 }
 
 macro UnorderedMap.@each(self; @body(key, value)) {
@@ -211,8 +210,8 @@ fn usz UnorderedMap.len(&map) @inline {
 }
 
 fn void? UnorderedMap.remove(&self, Key key) @maydiscard {
-	if (!self.count) return NOT_FOUND?;
-	ulong hash = key.myhash();
+	if (!self.count) return NOT_FOUND~;
+	ulong hash = key.hash();
 	ulong mask = self.metadatas.len - 1;
 	ulong idx = hash & mask;
 	char fingerprint = take_fingerprint(hash);
@@ -222,7 +221,7 @@ fn void? UnorderedMap.remove(&self, Key key) @maydiscard {
 			case self.metadatas[idx].is_tombstone():
 				break;
 			case !self.metadatas[idx].used:
-				return NOT_FOUND?;
+				return NOT_FOUND~;
 			case self.metadatas[idx].fingerprint == fingerprint:
 				if (self.entries[idx].key == key) {
 					self.metadatas[idx].set_tombstone();
@@ -239,9 +238,9 @@ fn UnorderedMap UnorderedMap.copy(&old, Allocator allocator) {
 	UnorderedMap new;
 	new.allocator = allocator;
 	new.count = old.count;
-	new.metadatas = allocator::new_array(new.allocator, Metadata, old.metadatas.len);
+	new.metadatas = alloc::new_array(new.allocator, Metadata, old.metadatas.len);
 	new.metadatas[..] = old.metadatas[..];
-	new.entries = allocator::new_array(new.allocator, Entry, old.entries.len);
+	new.entries = alloc::new_array(new.allocator, Entry, old.entries.len);
 	new.entries[..] = old.entries[..];
 
 	return new;
@@ -256,7 +255,7 @@ fn void UnorderedMap.clear(&self) {
 	self.count = 0;
 }
 
-fn usz? UnorderedMap.to_format(&self, Formatter* f) @dynamic {
+fn sz? UnorderedMap.to_format(&self, Formatter* f) @dynamic {
 	usz len;
 	len += f.print("{ ")!;
 	self.@each_entry(; Entry entry) {
