@@ -34,7 +34,7 @@ struct Entry
 
 // BitMask — iterates over set bits in a group match result
 
-struct BitMask @local
+struct BitMask
 {
 	ushort mask;
 }
@@ -65,7 +65,7 @@ fn usz BitMask.leading_zeros(&self) @inline
 
 // Group — SIMD parallel lookup of 16 control bytes
 
-fn BitMask match_tag(char* ctrl_ptr, char tag) @inline @local
+fn BitMask match_tag(char* ctrl_ptr, char tag) @inline
 {
 	char[<GROUP_WIDTH>] group = *(char[<GROUP_WIDTH>]*)ctrl_ptr;
 	char[<GROUP_WIDTH>] splat = (char[<GROUP_WIDTH>])tag;
@@ -73,12 +73,12 @@ fn BitMask match_tag(char* ctrl_ptr, char tag) @inline @local
 	return { .mask = cmp.mask_to_int() };
 }
 
-fn BitMask match_empty(char* ctrl_ptr) @inline @local
+fn BitMask match_empty(char* ctrl_ptr) @inline
 {
 	return match_tag(ctrl_ptr, CTRL_EMPTY);
 }
 
-fn BitMask match_empty_or_deleted(char* ctrl_ptr) @inline @local
+fn BitMask match_empty_or_deleted(char* ctrl_ptr) @inline
 {
 	char[<GROUP_WIDTH>] group = *(char[<GROUP_WIDTH>]*)ctrl_ptr;
 	char[<GROUP_WIDTH>] high_bit = (char[<GROUP_WIDTH>])0x80;
@@ -93,13 +93,13 @@ macro char h2(uint hash) => (char)((hash >> 25) & 0x7F);
 
 // ProbeSeq — triangular probe sequence
 
-struct ProbeSeq @local
+struct ProbeSeq
 {
 	usz pos;
 	usz stride;
 }
 
-fn ProbeSeq probe_seq_new(uint hash, usz bucket_mask) @local
+fn ProbeSeq probe_seq_new(uint hash, usz bucket_mask)
 {
 	return { .pos = h1(hash) & bucket_mask, .stride = 0 };
 }
@@ -389,21 +389,21 @@ fn Value? SwissTableValueIterator.next(&self)
 
 // Internal helpers
 
-fn bool is_full(char ctrl) @inline @local => (ctrl & 0x80) == 0;
+fn bool is_full(char ctrl) @inline => (ctrl & 0x80) == 0;
 
-fn Entry* SwissTable.entry_at(&self, usz index) @inline @private
+fn Entry* SwissTable.entry_at(&self, usz index) @inline
 {
 	return &self.data[index];
 }
 
-fn void SwissTable.set_ctrl(&self, usz index, char ctrl) @local
+fn void SwissTable.set_ctrl(&self, usz index, char ctrl)
 {
 	self.ctrl[index] = ctrl;
 	usz mirror = ((index + self.bucket_mask + 1 - GROUP_WIDTH) & self.bucket_mask) + GROUP_WIDTH;
 	self.ctrl[mirror] = ctrl;
 }
 
-fn void SwissTable.insert_entry(&self, uint hash, char tag, Key key, Value value) @local
+fn void SwissTable.insert_entry(&self, uint hash, char tag, Key key, Value value)
 {
 	ProbeSeq seq = probe_seq_new(hash, self.bucket_mask);
 
@@ -431,7 +431,7 @@ fn void SwissTable.insert_entry(&self, uint hash, char tag, Key key, Value value
 	}
 }
 
-fn void SwissTable.erase_at(&self, usz index) @private
+fn void SwissTable.erase_at(&self, usz index)
 {
 	assert(is_full(self.ctrl[index]), "erase_at called on non-full slot");
 	self.items--;
@@ -464,12 +464,12 @@ fn void SwissTable.erase_at(&self, usz index) @private
 
 // Allocation & growth
 
-fn void SwissTable.alloc_table(&self, usz num_buckets) @local
+fn void SwissTable.alloc_table(&self, usz num_buckets)
 {
 	assert(num_buckets > 0 && math::is_power_of_2(num_buckets),
 		"num_buckets must be a power of 2");
 
-	usz data_size = Entry.sizeof * num_buckets;
+	usz data_size = Entry::size * num_buckets;
 	usz ctrl_size = num_buckets + GROUP_WIDTH;
 	usz total_size = data_size + ctrl_size;
 
@@ -483,7 +483,7 @@ fn void SwissTable.alloc_table(&self, usz num_buckets) @local
 	self.ctrl[:ctrl_size] = CTRL_EMPTY;
 }
 
-fn void SwissTable.grow(&self) @local
+fn void SwissTable.grow(&self)
 {
 	usz old_num_buckets = self.num_buckets();
 	usz new_num_buckets;
@@ -526,7 +526,7 @@ fn void SwissTable.grow(&self) @local
 
 // Capacity calculations
 
-fn usz capacity_to_buckets(usz capacity) @local
+fn usz capacity_to_buckets(usz capacity)
 {
 	assert(capacity > 0, "capacity must be positive");
 
@@ -540,7 +540,7 @@ fn usz capacity_to_buckets(usz capacity) @local
 	return math::next_power_of_2(adjusted);
 }
 
-fn usz bucket_mask_to_capacity(usz bucket_mask) @local
+fn usz bucket_mask_to_capacity(usz bucket_mask)
 {
 	if (bucket_mask < 8)
 	{

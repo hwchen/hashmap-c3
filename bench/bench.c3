@@ -39,7 +39,7 @@ macro construction_destruction($MapImpl) {
 	}
 	NanoDuration end = start.to_now();
 	assert(result == 0);
-	io::eprintfn("Construct/destruct %s: %s", $MapImpl.nameof, end);
+	io::eprintfn("Construct/destruct %s: %s", $MapImpl::name, end);
 }
 
 macro construction_insert_one_int_destruction($MapImpl) {
@@ -55,11 +55,11 @@ macro construction_insert_one_int_destruction($MapImpl) {
 	}
 	NanoDuration end = start.to_now();
 	assert(result == 0);
-	io::eprintfn("Construct, insert one int, destruct %s: %s", $MapImpl.nameof, end);
+	io::eprintfn("Construct, insert one int, destruct %s: %s", $MapImpl::name, end);
 }
 
 macro insert_erase_100M_int($MapImpl, ulong limit) {
-	io::eprintfn("Insert and erase %d int %s", limit, $MapImpl.nameof);
+	io::eprintfn("Insert and erase %d int %s", limit, $MapImpl::name);
 	Sfc64 rng;
 	sz seed = 213;
 	rng.seed(seed);

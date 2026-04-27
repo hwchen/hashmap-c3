@@ -79,7 +79,7 @@ fn bool UnorderedMap.set(&self, Key key, Value value) @operator([]=) {
 	return self.add_entry(key, value);
 }
 
-fn bool UnorderedMap.add_entry(&self, Key key, Value value) @local {
+fn bool UnorderedMap.add_entry(&self, Key key, Value value) {
 	ulong hash = key.hash();
 	ulong mask = self.metadatas.len - 1;
 	ulong idx = hash & mask;

@@ -46,7 +46,7 @@ fn bool OrderedMap.set(&self, Key key, Value value) {
 	return self.add_entry(key, value);
 }
 
-fn bool OrderedMap.add_entry(&self, Key key, Value value) @local {
+fn bool OrderedMap.add_entry(&self, Key key, Value value) {
 	usz hash = key.hash();
 	usz mask = self.entries.len - 1;
 	usz idx = hash & mask;
