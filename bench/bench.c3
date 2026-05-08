@@ -18,7 +18,7 @@ fn void main(String[] args) {
 	//construction_insert_one_int_destruction(UnorderedMap(<int, int>));
 	//construction_insert_one_int_destruction(HashMap(<int, int>));
 
-	ulong n = (args.len == 2) ? args[1].to_ulong()!! : 100_000_000;
+	int n = (args.len == 2) ? args[1].to_int()!! : 100_000_000;
 
 	// SwissTable from AndrewCodeDev
 	insert_erase_100M_int(SwissTable{int, int}, n);
@@ -58,10 +58,10 @@ macro construction_insert_one_int_destruction($MapImpl) {
 	io::eprintfn("Construct, insert one int, destruct %s: %s", $MapImpl::name, end);
 }
 
-macro insert_erase_100M_int($MapImpl, ulong limit) {
+macro insert_erase_100M_int($MapImpl, int limit) {
 	io::eprintfn("Insert and erase %d int %s", limit, $MapImpl::name);
 	Sfc64 rng;
-	sz seed = 213;
+	ulong seed = 213;
 	rng.seed(seed);
 	@pool() {
 		$MapImpl mymap;

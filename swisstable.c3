@@ -16,13 +16,13 @@ import std::math;
 
 // Constants
 
-const usz GROUP_WIDTH = 16;
+const sz GROUP_WIDTH = 16;
 
 const char CTRL_EMPTY   = 0xFF;
 const char CTRL_DELETED = 0x80;
 
-const usz LOAD_FACTOR_NUMERATOR   = 7;
-const usz LOAD_FACTOR_DENOMINATOR = 8;
+const sz LOAD_FACTOR_NUMERATOR   = 7;
+const sz LOAD_FACTOR_DENOMINATOR = 8;
 
 // Entry — key-value pair stored in the data portion
 
@@ -41,10 +41,10 @@ struct BitMask
 
 fn bool BitMask.any_bit_set(&self) @inline => self.mask != 0;
 
-fn usz BitMask.lowest_set_bit(&self) @inline
+fn sz BitMask.lowest_set_bit(&self) @inline
 {
 	assert(self.mask != 0, "lowest_set_bit called on empty bitmask");
-	return (usz)self.mask.ctz();
+	return (sz)self.mask.ctz();
 }
 
 fn void BitMask.remove_lowest_bit(&self) @inline
@@ -52,15 +52,15 @@ fn void BitMask.remove_lowest_bit(&self) @inline
 	self.mask &= self.mask - 1;
 }
 
-fn usz BitMask.trailing_zeros(&self) @inline
+fn sz BitMask.trailing_zeros(&self) @inline
 {
-	return (usz)self.mask.ctz();
+	return (sz)self.mask.ctz();
 }
 
-fn usz BitMask.leading_zeros(&self) @inline
+fn sz BitMask.leading_zeros(&self) @inline
 {
 	// For 16-bit mask, clz gives leading zeros from 16-bit perspective
-	return (usz)self.mask.clz();
+	return (sz)self.mask.clz();
 }
 
 // Group — SIMD parallel lookup of 16 control bytes
@@ -88,23 +88,23 @@ fn BitMask match_empty_or_deleted(char* ctrl_ptr) @inline
 
 // Hash splitting
 
-macro usz h1(uint hash) => (usz)hash;
+macro sz h1(uint hash) => (sz)hash;
 macro char h2(uint hash) => (char)((hash >> 25) & 0x7F);
 
 // ProbeSeq — triangular probe sequence
 
 struct ProbeSeq
 {
-	usz pos;
-	usz stride;
+	sz pos;
+	sz stride;
 }
 
-fn ProbeSeq probe_seq_new(uint hash, usz bucket_mask)
+fn ProbeSeq probe_seq_new(uint hash, sz bucket_mask)
 {
 	return { .pos = h1(hash) & bucket_mask, .stride = 0 };
 }
 
-fn void ProbeSeq.move_next(&self, usz bucket_mask) @inline
+fn void ProbeSeq.move_next(&self, sz bucket_mask) @inline
 {
 	self.stride += GROUP_WIDTH;
 	self.pos = (self.pos + self.stride) & bucket_mask;
@@ -117,9 +117,9 @@ struct SwissTable
 	Allocator allocator;
 	char* ctrl;
 	Entry* data;
-	usz bucket_mask;
-	usz items;
-	usz growth_left;
+	sz bucket_mask;
+	sz items;
+	sz growth_left;
 }
 
 // Lifecycle
@@ -128,7 +128,7 @@ struct SwissTable
  @param [&inout] allocator : "The allocator to use"
  @param initial_capacity : "The initial capacity to reserve"
 *>
-fn SwissTable* SwissTable.init(&self, Allocator allocator, usz initial_capacity = 0)
+fn SwissTable* SwissTable.init(&self, Allocator allocator, sz initial_capacity = 0)
 {
 	self.allocator = allocator;
 	self.ctrl = null;
@@ -139,13 +139,13 @@ fn SwissTable* SwissTable.init(&self, Allocator allocator, usz initial_capacity 
 
 	if (initial_capacity > 0)
 	{
-		usz num_buckets = capacity_to_buckets(initial_capacity);
+		sz num_buckets = capacity_to_buckets(initial_capacity);
 		self.alloc_table(num_buckets);
 	}
 	return self;
 }
 
-fn SwissTable* SwissTable.tinit(&self, usz initial_capacity = 0)
+fn SwissTable* SwissTable.tinit(&self, sz initial_capacity = 0)
 {
 	return self.init(tmem, initial_capacity) @inline;
 }
@@ -163,9 +163,9 @@ fn void SwissTable.free(&self)
 
 // Public API — names match std::collections::map
 
-fn usz SwissTable.len(&self) @inline @operator(len) => self.items;
+fn sz SwissTable.len(&self) @inline @operator(len) => self.items;
 
-fn usz SwissTable.num_buckets(&self) @inline => self.bucket_mask + 1;
+fn sz SwissTable.num_buckets(&self) @inline => self.bucket_mask + 1;
 
 fn bool SwissTable.is_empty(&self) @inline => self.items == 0;
 
@@ -186,9 +186,9 @@ fn Value*? SwissTable.get_ref(&self, Key key)
 		BitMask mask = match_tag(&self.ctrl[seq.pos], tag);
 		while (mask.any_bit_set())
 		{
-			usz bit = mask.lowest_set_bit();
+			sz bit = mask.lowest_set_bit();
 			mask.remove_lowest_bit();
-			usz index = (seq.pos + bit) & self.bucket_mask;
+			sz index = (seq.pos + bit) & self.bucket_mask;
 
 			Entry* entry = self.entry_at(index);
 			if (equals(entry.key, key))
@@ -230,7 +230,7 @@ fn bool SwissTable.set(&self, Key key, Value value) @operator([]=)
 {
 	if (self.ctrl == null)
 	{
-		usz num_buckets = capacity_to_buckets(1);
+		sz num_buckets = capacity_to_buckets(1);
 		self.alloc_table(num_buckets);
 	}
 
@@ -245,9 +245,9 @@ fn bool SwissTable.set(&self, Key key, Value value) @operator([]=)
 			BitMask mask = match_tag(&self.ctrl[seq.pos], tag);
 			while (mask.any_bit_set())
 			{
-				usz bit = mask.lowest_set_bit();
+				sz bit = mask.lowest_set_bit();
 				mask.remove_lowest_bit();
-				usz index = (seq.pos + bit) & self.bucket_mask;
+				sz index = (seq.pos + bit) & self.bucket_mask;
 
 				Entry* entry = self.entry_at(index);
 				if (equals(entry.key, key))
@@ -290,9 +290,9 @@ fn void? SwissTable.remove(&self, Key key) @maydiscard
 		BitMask mask = match_tag(&self.ctrl[seq.pos], tag);
 		while (mask.any_bit_set())
 		{
-			usz bit = mask.lowest_set_bit();
+			sz bit = mask.lowest_set_bit();
 			mask.remove_lowest_bit();
-			usz index = (seq.pos + bit) & self.bucket_mask;
+			sz index = (seq.pos + bit) & self.bucket_mask;
 
 			Entry* entry = self.entry_at(index);
 			if (equals(entry.key, key))
@@ -316,7 +316,7 @@ fn void? SwissTable.remove(&self, Key key) @maydiscard
 fn void SwissTable.clear(&self)
 {
 	if (self.ctrl == null) return;
-	usz num_buckets = self.num_buckets();
+	sz num_buckets = self.num_buckets();
 	self.ctrl[:num_buckets + GROUP_WIDTH] = CTRL_EMPTY;
 	self.items = 0;
 	self.growth_left = bucket_mask_to_capacity(self.bucket_mask);
@@ -327,7 +327,7 @@ fn void SwissTable.clear(&self)
 struct SwissTableIterator
 {
 	SwissTable* table;
-	usz index;
+	sz index;
 }
 
 fn SwissTableIterator SwissTable.iter(&self)
@@ -335,7 +335,7 @@ fn SwissTableIterator SwissTable.iter(&self)
 	SwissTableIterator it = { .table = self, .index = 0 };
 	if (self.ctrl != null)
 	{
-		usz num_buckets = self.num_buckets();
+		sz num_buckets = self.num_buckets();
 		while (it.index < num_buckets && !is_full(self.ctrl[it.index]))
 		{
 			it.index++;
@@ -348,7 +348,7 @@ fn Entry*? SwissTableIterator.next(&self)
 {
 	if (self.table.ctrl == null) return NO_MORE_ELEMENT~;
 
-	usz num_buckets = self.table.num_buckets();
+	sz num_buckets = self.table.num_buckets();
 	if (self.index >= num_buckets) return NO_MORE_ELEMENT~;
 
 	Entry* entry = self.table.entry_at(self.index);
@@ -391,15 +391,15 @@ fn Value? SwissTableValueIterator.next(&self)
 
 fn bool is_full(char ctrl) @inline => (ctrl & 0x80) == 0;
 
-fn Entry* SwissTable.entry_at(&self, usz index) @inline
+fn Entry* SwissTable.entry_at(&self, sz index) @inline
 {
 	return &self.data[index];
 }
 
-fn void SwissTable.set_ctrl(&self, usz index, char ctrl)
+fn void SwissTable.set_ctrl(&self, sz index, char ctrl)
 {
 	self.ctrl[index] = ctrl;
-	usz mirror = ((index + self.bucket_mask + 1 - GROUP_WIDTH) & self.bucket_mask) + GROUP_WIDTH;
+	sz mirror = ((index + self.bucket_mask + 1 - GROUP_WIDTH) & self.bucket_mask) + GROUP_WIDTH;
 	self.ctrl[mirror] = ctrl;
 }
 
@@ -412,8 +412,8 @@ fn void SwissTable.insert_entry(&self, uint hash, char tag, Key key, Value value
 		BitMask mask = match_empty_or_deleted(&self.ctrl[seq.pos]);
 		if (mask.any_bit_set())
 		{
-			usz bit = mask.lowest_set_bit();
-			usz index = (seq.pos + bit) & self.bucket_mask;
+			sz bit = mask.lowest_set_bit();
+			sz index = (seq.pos + bit) & self.bucket_mask;
 
 			if (self.ctrl[index] == CTRL_EMPTY)
 			{
@@ -431,7 +431,7 @@ fn void SwissTable.insert_entry(&self, uint hash, char tag, Key key, Value value
 	}
 }
 
-fn void SwissTable.erase_at(&self, usz index)
+fn void SwissTable.erase_at(&self, sz index)
 {
 	assert(is_full(self.ctrl[index]), "erase_at called on non-full slot");
 	self.items--;
@@ -445,7 +445,7 @@ fn void SwissTable.erase_at(&self, usz index)
 	//   3. The combined distance from the nearest empties on each side
 	//      is less than GROUP_WIDTH, ensuring no probe group could
 	//      span the gap without seeing an empty.
-	usz index_before = ((index + self.bucket_mask + 1 - GROUP_WIDTH) & self.bucket_mask);
+	sz index_before = ((index + self.bucket_mask + 1 - GROUP_WIDTH) & self.bucket_mask);
 	BitMask empty_before = match_empty(&self.ctrl[index_before]);
 	BitMask empty_after = match_empty(&self.ctrl[index]);
 	bool was_never_full = empty_before.any_bit_set()
@@ -464,14 +464,14 @@ fn void SwissTable.erase_at(&self, usz index)
 
 // Allocation & growth
 
-fn void SwissTable.alloc_table(&self, usz num_buckets)
+fn void SwissTable.alloc_table(&self, sz num_buckets)
 {
 	assert(num_buckets > 0 && math::is_power_of_2(num_buckets),
 		"num_buckets must be a power of 2");
 
-	usz data_size = Entry::size * num_buckets;
-	usz ctrl_size = num_buckets + GROUP_WIDTH;
-	usz total_size = data_size + ctrl_size;
+	sz data_size = Entry::size * num_buckets;
+	sz ctrl_size = num_buckets + GROUP_WIDTH;
+	sz total_size = data_size + ctrl_size;
 
 	void* raw = alloc::calloc(self.allocator, total_size);
 
@@ -485,8 +485,8 @@ fn void SwissTable.alloc_table(&self, usz num_buckets)
 
 fn void SwissTable.grow(&self)
 {
-	usz old_num_buckets = self.num_buckets();
-	usz new_num_buckets;
+	sz old_num_buckets = self.num_buckets();
+	sz new_num_buckets;
 
 	if (self.ctrl == null || old_num_buckets == 0)
 	{
@@ -499,14 +499,14 @@ fn void SwissTable.grow(&self)
 
 	char* old_ctrl = self.ctrl;
 	Entry* old_data = self.data;
-	usz old_items = self.items;
+	sz old_items = self.items;
 
 	self.alloc_table(new_num_buckets);
 	self.items = 0;
 
 	if (old_ctrl != null && old_items > 0)
 	{
-		for (usz i = 0; i < old_num_buckets; i++)
+		for (sz i = 0; i < old_num_buckets; i++)
 		{
 			if (is_full(old_ctrl[i]))
 			{
@@ -526,7 +526,7 @@ fn void SwissTable.grow(&self)
 
 // Capacity calculations
 
-fn usz capacity_to_buckets(usz capacity)
+fn sz capacity_to_buckets(sz capacity)
 {
 	assert(capacity > 0, "capacity must be positive");
 
@@ -535,12 +535,12 @@ fn usz capacity_to_buckets(usz capacity)
 		return GROUP_WIDTH;
 	}
 
-	usz adjusted = (capacity * LOAD_FACTOR_DENOMINATOR + LOAD_FACTOR_NUMERATOR - 1)
+	sz adjusted = (capacity * LOAD_FACTOR_DENOMINATOR + LOAD_FACTOR_NUMERATOR - 1)
 		/ LOAD_FACTOR_NUMERATOR;
 	return math::next_power_of_2(adjusted);
 }
 
-fn usz bucket_mask_to_capacity(usz bucket_mask)
+fn sz bucket_mask_to_capacity(sz bucket_mask)
 {
 	if (bucket_mask < 8)
 	{

@@ -33,7 +33,7 @@ fn bool Metadata.is_tombstone(m) @inline {
 
 struct UnorderedMap (Printable) {
 	Allocator allocator;
-	usz count;
+	sz count;
 	Metadata[] metadatas;
 	Entry[] entries;
 }
@@ -175,7 +175,7 @@ fn void UnorderedMap.reallocator(&self) {
 	Entry[] old_entries = self.entries;
 	self.entries = alloc::new_array(self.allocator, Entry, old_entries.len * 2);
 
-	usz old_count = self.count;
+	sz old_count = self.count;
 	self.count = 0;
 	foreach (idx, metadata : old_metadatas) {
 		if (metadata.used) {
@@ -205,7 +205,7 @@ macro UnorderedMap.@each_entry(self; @body(entry)) {
 	}
 }
 
-fn usz UnorderedMap.len(&map) @inline {
+fn sz UnorderedMap.len(&map) @inline {
 	return map.count;
 }
 
@@ -256,7 +256,7 @@ fn void UnorderedMap.clear(&self) {
 }
 
 fn sz? UnorderedMap.to_format(&self, Formatter* f) @dynamic {
-	usz len;
+	sz len;
 	len += f.print("{ ")!;
 	self.@each_entry(; Entry entry) {
 		if (len > 2) len += f.print(", ")!;
